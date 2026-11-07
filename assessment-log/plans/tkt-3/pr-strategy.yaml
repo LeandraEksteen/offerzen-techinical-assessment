@@ -1,0 +1,70 @@
+schema_version: 1
+key: TKT-3
+title: "Task 1: async company-scoped CSV export with history table and minimal TypeScript UI"
+jira: assessment-log/tickets/TKT-3.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-3 | Task 1: async company-scoped CSV export with history table and minimal TypeScript UI"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-3/async-csv-export
+    stack: rails
+    implements: []
+    role: none
+    requirements: [4, 5, 6, 7, 8, 9, 10, 11, 13, 36]
+    scope:
+      - app/models/
+      - app/controllers/
+      - app/jobs/
+      - app/services/
+      - app/views/
+      - app/javascript/
+      - config/routes.rb
+      - config/recurring.yml
+      - config/application.rb
+      - config/database.yml
+      - Gemfile
+      - Gemfile.lock
+      - db/
+      - test/
+      - assessment-log/
+    changes: |
+      Install Active Storage tables and add export_requests (company, admin, state, filters, row count,
+      attached file, partial unique index so one export per admin can be in progress). Exports page with
+      the form (date range, status select) and the 20 most recent exports of the company; create action
+      validates and enqueues a job that takes the record; the job builds the CSV in batches from an
+      allow-listed set of columns, reads only a numeric top-level score, neutralises formula injection and
+      attaches the file. Authorised download (no Active Storage public routes). Expiry after 7 days with a
+      recurring purge job. Small Stimulus controller in TypeScript for submit feedback.
+    stubs: none
+    tests:
+      - "UT-1 [positive] two companies: admin A exports only company A rows; a company_id parameter for B is ignored"
+      - "UT-2 [negative] admin B gets 404 for A's download; unauthenticated users are redirected"
+      - "UT-3 [positive] the CSV header is exactly the six allowed columns; no email, free text or raw responses_json content appears"
+      - "UT-4 [edge] status cells starting with = + - or @ are neutralised"
+      - "UT-5 [positive] the exporter refuses to build when its column list contains a declared PII attribute"
+      - "UT-6 [positive] numeric score exported as given; string, null, missing key, array root, double-encoded and null root export blank"
+      - "UT-7 [positive] filters: date range inclusive with either end optional; status variants match; no-status matches nil, empty and blank; n/a separate"
+      - "UT-8 [negative] invalid date, reversed range or unknown status gives 422 and creates no export"
+      - "UT-9 [positive] status options are distinct per own company, grouped and lowercased, no-status once, cached for 10 minutes, no stored status modified"
+      - "UT-10 [positive] create makes an in-progress row, enqueues a job with the record only, and shows the refresh message; after the job the row is ready with a link; history shows the 20 most recent of the own company only"
+      - "UT-11 [positive] the job exports every row across several batches in a stable order"
+      - "UT-12 [negative] a job error sets failed with the generic text, no retry, and no data in the page or log"
+      - "UT-13 [edge] a second create while one is in progress is refused; the database index blocks a race"
+      - "UT-14 [edge] an in-progress export older than 30 minutes counts as failed so a new one can start"
+      - "UT-15 [positive] exports older than 7 days show expired and cannot be downloaded; the purge job removes the file"
+      - "UT-16 [positive] the file is attached through Active Storage as plain text/csv; no Active Storage routes are drawn"
+      - "UT-17 [positive] a successful and a failing export leave no emails, response content or raw scores in the captured log"
+      - "UT-18 [positive] the exports page wires the Stimulus controller; yarn typecheck passes"
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit && yarn typecheck
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Production needs a job worker (bin/jobs or SOLID_QUEUE_IN_PUMA) and S3-style storage; the local disk is ephemeral. Documented in SOLUTION.md (TKT-12); nothing is deployed in this exercise.
+manual_checks:
+  - "MC-1 [manual] real browser: sign in, set filters, start an export, see the in-progress row and refresh message, refresh until ready, download and inspect the CSV, confirm another company's link returns 404"
+  - "MC-2 [manual] export the 200,000-row company from the seed; record time, file size and that the page stays responsive"
+conflict_risks: []

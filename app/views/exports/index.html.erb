@@ -1,0 +1,72 @@
+<h1>Exports</h1>
+<p><%= link_to "Back to home", root_path %></p>
+
+<% if @errors.present? %>
+  <ul role="alert">
+    <% @errors.each do |message| %>
+      <li><%= message %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%= form_with url: exports_path, method: :post,
+      data: { controller: "export-form",
+              action: "turbo:submit-start->export-form#started turbo:submit-end->export-form#finished" } do |form| %>
+  <p>
+    <%= form.label :from, "From (assessment date)" %>
+    <%= form.date_field :from, value: params[:from] %>
+  </p>
+  <p>
+    <%= form.label :to, "To (assessment date)" %>
+    <%= form.date_field :to, value: params[:to] %>
+  </p>
+  <p>
+    <%= form.label :status, "Status" %>
+    <%= form.select :status, @status_entries, { include_blank: "All", selected: params[:status] } %>
+  </p>
+  <%= form.submit "Export CSV", data: { export_form_target: "button" } %>
+  <p role="status" hidden data-export-form-target="message"></p>
+<% end %>
+
+<% if @any_in_progress %>
+  <p role="status">Exports can take a few minutes. Refresh this page to check progress.</p>
+<% end %>
+
+<h2>Recent exports</h2>
+<% if @exports.empty? %>
+  <p>No exports yet.</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>Requested</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Status filter</th>
+        <th>State</th>
+        <th>Rows</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @exports.each do |export| %>
+        <tr>
+          <td><%= export.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") %></td>
+          <td><%= export.date_from || "any" %></td>
+          <td><%= export.date_to || "any" %></td>
+          <td><%= export.status_filter == StatusOptions::NONE ? StatusOptions::NONE_LABEL : (export.status_filter || "all") %></td>
+          <td>
+            <%= export.shown_state.humanize %>
+            <% if export.failed? %> — Export failed, please try again<% end %>
+          </td>
+          <td><%= export.row_count %></td>
+          <td>
+            <% if export.downloadable? %>
+              <%= link_to "Download CSV", export_path(export), data: { turbo: false } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

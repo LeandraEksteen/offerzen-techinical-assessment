@@ -9,13 +9,12 @@ class PiiAttributesTest < ActiveSupport::TestCase
     assert_empty Company.try(:pii_attribute_names).to_a
   end
 
-  test "declaring twice does not duplicate names or filters" do
+  test "declaring twice does not duplicate names" do
     before_names = Assessment.pii_attribute_names
-    before_filters = Rails.application.config.filter_parameters.dup
     Assessment.pii_attributes :employee_email
 
     assert_equal before_names, Assessment.pii_attribute_names
-    assert_equal before_filters, Rails.application.config.filter_parameters
+    assert_equal Pii::Registry.all_names.uniq, Pii::Registry.all_names
   end
 
   # UT-3

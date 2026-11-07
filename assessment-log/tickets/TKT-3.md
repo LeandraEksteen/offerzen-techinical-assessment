@@ -2,9 +2,9 @@
 key: TKT-3
 type: Task
 title: Task 1: async company-scoped CSV export with history table and minimal TypeScript UI
-status: To Do
+status: In Review
 parent: EPIC-1
-updated: 2026-11-07T08:28:15Z
+updated: 2026-11-07T09:21:32Z
 ---
 
 ## Description
@@ -41,3 +41,4 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: Active Storage tables and `export_requests` (partial unique index: one in progress per admin); `ExportRequest`, `StatusOptions`, `ExportFilters`, `AssessmentCsvExport` (fixed six columns, batches of 5,000, numeric-only score read inside SQL, formula guard, PII column guard), `ExportJob`, `ExpireExportsJob` (recurring in production), `ExportsController` (create, index, authorised download; no Active Storage routes), exports page, small Stimulus controller in TypeScript. Spec amended for two decisions: reversed date range gives 422 (Req 5); an export in progress for more than 30 minutes counts as failed (Req 10). Checks: `bin/rails test` 88 runs, 387 assertions, 0 failures (stable over 8 consecutive runs); `bin/rubocop`, `bin/brakeman`, `bin/bundler-audit`, `yarn typecheck` clean. MC-1: real dev server, as the seeded admin of the big company: exports page loads, an export of everything returned immediately with the in-progress message, was ready after 4 seconds, downloaded as `text/csv` with the exact header; another company's admin got 404 for the link, a signed-out request was redirected, the Active Storage blob route returned 404; no email appeared in the new log lines. MC-2: 200,000 rows exported in 3.8 seconds (10.8 MB), nothing held in memory. Out-of-range scores (for example 150 and -5) are exported as stored numbers by design; the score reader in TKT-8 handles them. Findings: parallel test workers segfaulted inside libpq on macOS once the suite passed 50 tests, fixed with `gssencmode: disable` in `config/database.yml`; the `csv` gem is now declared because it leaves the default gems in Ruby 3.4.

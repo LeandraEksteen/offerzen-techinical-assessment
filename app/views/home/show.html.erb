@@ -1,4 +1,6 @@
 <h1><%= current_company.name %></h1>
 <p>Signed in as <%= current_admin.email %>.</p>
 
+<p><%= link_to "Exports", exports_path %></p>
+
 <%= button_to "Sign out", session_path, method: :delete %>

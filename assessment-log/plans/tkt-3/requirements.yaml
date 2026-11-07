@@ -1,0 +1,172 @@
+---
+schema_version: 1
+key: TKT-3
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 4
+  summary: An admin can export assessments for their own company only
+  category: business-rule
+  source: prd:OfferZen assignment PDF §Task 1
+  source_text: A company admin can export assessments for their own company only.
+  acceptance: A test with two companies shows admin A's export contains only company
+    A rows; a request carrying a company_id parameter for company B still exports
+    company A; a download link for company A's export returns 404 for admin B.
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: export
+  risk:
+  - permissions
+  - pii
+- id: 5
+  summary: Export filters are exactly two - assessment date range and status
+  category: functional
+  source: user:2026-11-07
+  source_text: For an assessment I would assume there would be a created_date and
+    an assessment_date ... So let's have the filter work on assessment date
+  acceptance: The export form has only a date range (on assessment_date, inclusive,
+    whole UTC days, either end optional) and a status select; blank status means all;
+    an invalid date or an unknown status returns 422 with a plain message and creates
+    no export; there is no row cap.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes: my proposed filter on created_at
+  domain: export
+  risk: []
+- id: 6
+  summary: The status select lists the distinct statuses stored for the admin's own
+    company, grouped without changing data
+  category: functional
+  source: user:2026-11-07
+  source_text: Unique per company records as per the admin logged in, so not the entire
+    table, just the relevant records. also it would be fine to group to whitespace
+    strip and case insensitive
+  acceptance: For a company whose rows hold 'Complete', 'complete ' and 'COMPLETE'
+    the select shows one option labelled 'complete' that filters all three; nil, empty
+    string and blank-only share one option '(no status)' that filters all of them;
+    'n/a' is its own option; options come only from the admin's company; the list
+    is cached for 10 minutes per company; no stored status is modified.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes: my proposed alias map shared with Task 3
+  domain: export
+  risk: []
+- id: 7
+  summary: Export runs asynchronously with a history table on the download page
+  category: functional
+  source: user:2026-11-07
+  source_text: The user selects the filters and clicks download. After a second or
+    two the page auto refreshes Then there is a 'history' table on the download page
+  acceptance: Clicking download creates a history row with status 'in progress' and
+    the page refreshes within about 2 seconds to show it plus a message to refresh
+    in a few minutes; a background job builds the file in batches; when done the row
+    shows 'ready' with a download link; the history lists the 20 most recent exports
+    of the admin's own company; no polling or global banner exists.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes: my recommendation of streaming
+  domain: export
+  risk: []
+- id: 8
+  summary: Exported columns are an allow-list that leaves out personal identifiers
+    and free text
+  category: business-rule
+  source: prd:OfferZen assignment PDF §Task 1
+  source_text: The exported file excludes or redacts fields that should not leave
+    the system in raw form (for example, free text answers and personal identifiers).
+  acceptance: The CSV header is exactly assessment_id, assessment_date, created_at,
+    status (raw stored value), score, employee_id; a test asserts no employee_email,
+    free-text answer or raw responses_json content appears; any cell starting with
+    =, +, - or @ is neutralised against formula injection.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (columns accepted in T1-2, T1-10)
+  supersedes:
+  domain: export
+  risk:
+  - pii
+- id: 9
+  summary: Until Task 2 ships, the export reads only the top-level score key and emits
+    it only if it is a JSON number
+  category: edge-case
+  source: user:2026-11-07
+  source_text: so are we gonna assume for task one we only read {score:10} in task
+    1 with no normalisation right?
+  acceptance: Rows whose responses_json has numeric score export that number; rows
+    with a string, null, missing key or non-object JSON export a blank score; no free
+    text can reach the score column.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: export
+  risk:
+  - pii
+- id: 10
+  summary: Export failure, duplicate-click and retention behaviour
+  category: edge-case
+  source: user:2026-11-07
+  source_text: T1-8 Yes exactly
+  acceptance: A job error sets the row to 'failed' with the generic text 'Export failed,
+    please try again' and no data or technical detail in the UI or logs; there is
+    no automatic retry; a second click while one is in progress shows 'an export is
+    already in progress' and creates nothing; files older than 7 days are deleted
+    and their row shows 'expired'.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: export
+  risk:
+  - state-transition
+- id: 11
+  summary: Finished files are stored through Active Storage as plain CSV; production
+    would use S3-style storage
+  category: operational
+  source: user:2026-11-07
+  source_text: Exactly - final product would be S3 or some other file sharing system
+  acceptance: Files are attached via Active Storage on local disk in dev and test;
+    SOLUTION.md states that production needs S3-style storage because the local disk
+    is ephemeral on a Heroku-like host; the file is not zipped.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes: option of emailing the CSV
+  domain: export
+  risk: []
+- id: 13
+  summary: Export and dashboard requests leave no sensitive values in logs
+  category: operational
+  source: prd:OfferZen assignment PDF §Task 1
+  source_text: Avoid exposing sensitive values in logs related to this feature.
+  acceptance: After a scripted run of an export (including a failing one) and dashboard
+    loads with filters, the captured log and error output contains no employee email,
+    response content or raw score value (checked by a test that greps the captured
+    log).
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: logging
+  risk:
+  - pii
+- id: 36
+  summary: TypeScript stays minimal - a small export form with feedback
+  category: functional
+  source: prd:OfferZen assignment PDF §Scope control
+  source_text: Keep TypeScript truly minimal (small UI to trigger export and show
+    basic feedback).
+  acceptance: TypeScript is limited to the export form behaviour (submit, show 'in
+    progress', refresh after about 2 seconds, show errors); yarn typecheck passes;
+    no other TypeScript features exist.
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: export
+  risk: []

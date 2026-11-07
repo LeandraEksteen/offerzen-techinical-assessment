@@ -1,6 +1,6 @@
 # Prompts
 
-Verbatim, in order. 33 prompts so far, covering the planning phase. The summary below is for the planning phase and is extended when the build is done.
+Verbatim, in order. 42 prompts so far, covering the planning phase. The summary below is for the planning phase and is extended when the build is done.
 
 ## Summary: how the planning went
 
@@ -18,7 +18,7 @@ Verbatim, in order. 33 prompts so far, covering the planning phase. The summary 
 - **Checking the assistant's work.** The author caught that the Task 3 questions had been skipped and sent the assistant back, asked it to check against the full PDF, and asked for each task's constraints to be reviewed before moving on.
 
 **Outputs of this phase**
-- 33 prompts, 20 numbered decisions (`DECISIONS.md`).
+- 42 prompts, 21 numbered decisions (`DECISIONS.md`).
 - An approved spec with 44 requirements: 40 active, 3 out of scope, 1 dropped (`spec/`).
 - One epic and 12 tickets in build order (`tickets/`).
 - No application code yet.
@@ -497,3 +497,59 @@ Implement
 ## Prompt 33
 
 Commit and open PR
+
+---
+
+## Prompt 34
+
+merged, continue
+
+---
+
+## Prompt 35
+
+Implement
+
+---
+
+## Prompt 36
+
+Commit and open PR
+
+---
+
+## Prompt 37
+
+Cool this is the first of the 3 tasks, let's write some /test-plan 
+staging in this case is our local
+and then test
+
+---
+
+## Prompt 38
+
+Yes, and allow setup
+
+---
+
+## Prompt 39
+
+choose the correct profile, the leandra gmail one
+
+---
+
+## Prompt 40
+
+oh if you can do in browser here thats fine as well
+
+---
+
+## Prompt 41
+
+Commit to PR branch
+
+---
+
+## Prompt 42
+
+can we add screenshots of the basic functionality in the pr
