@@ -1,9 +1,6 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Example:
-#
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+# Small, fast seed: bin/ci runs db:seed:replant in the test environment, so
+# this must stay quick. For the large messy dataset used by the later tickets
+# run `bin/rails assessments:seed` (about 500,000 rows) instead.
+unless Assessment.exists?
+  AssessmentSeeder.new(total: 300, companies: 3, output: StringIO.new).call
+end
