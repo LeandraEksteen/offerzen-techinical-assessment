@@ -72,7 +72,7 @@ One employee lookup (what the N+1 repeats per row) is a primary-key index scan t
 | Baseline | TKT-4 | 421 | 3,921 | 58,019 | 1,414 | this file |
 | Pagination (page 1) | TKT-5 | 66 | 60 | 61 | 53 | page 1 of each scenario; HTML 12 KB; deep page 183 ms (below) |
 | Eager loading | TKT-6 | 49 | 42 | 44 | 4 | page 1 of each scenario; deep page 162 ms (below) |
-| Composite index | TKT-7 | | | | | |
+| Composite index | TKT-7 | 8 | 7 | 7 | 4 | page 1 of each scenario; main query 43 ms to 0.2 ms; deep page unchanged (176 ms) |
 | Score reader | TKT-8 | | | | | |
 
 ## After pagination (TKT-5, 2026-11-07)
@@ -135,6 +135,63 @@ Against the original baseline (TKT-4) the normal-user page went from 421 ms and 
 - **Page 1 is unchanged:** both snapshots are identical to the committed baseline (same sha256 values as before).
 - **A smaller gain than the query count suggests, as predicted:** the 50 per-row lookups only cost about 15 to 20 ms in total because each is a fast primary-key lookup. What remains is dominated by the main assessments query (about 41 ms), which scans and sorts the whole company without an index; that is TKT-7.
 - **A cost noticed on the way:** the status list in the filter form runs `SELECT DISTINCT ... FROM assessments WHERE company_id = ...` (about 59 ms for the largest company) whenever its 10-minute cache is empty. Hot in the benchmark (cached by the warm-up) but a real cost for the first page view after the cache expires. It scans the same rows an index on the company would help; recorded for TKT-7 and the write-up.
+
+## After the composite index (TKT-7, 2026-11-07)
+
+One index on `assessments (company_id, assessment_date)`, built `CONCURRENTLY`. Same machine, conditions and method (median of 5 after a warm-up). The "before" runs below were repeated immediately before the migration.
+
+| Scenario | Before the index | After the index | Change |
+|---|---|---|---|
+| Normal user (Company 02, 2024), page 1 | 51 ms | 8 ms | 6.4 times faster |
+| Company 02, all rows, page 1 | 47 ms | 7 ms | 6.7 times faster |
+| Company 01 (largest), page 1 | 46 ms | 7 ms | 6.6 times faster |
+| Company 01, deep page 3,000 | 164 ms | 176 ms | no change (noise) |
+| SQL queries per page | 4 | 4 | none |
+| `ab`, concurrency 1 | 18.80 requests/s (53 ms) | 123.69 requests/s (8 ms) | 6.6 times more |
+| `ab`, concurrency 3 | 37.20 requests/s (81 ms) | 128.50 requests/s (23 ms) | 3.5 times more |
+| `ab`, 200 requests, concurrency 3 | 36.82 requests/s (81 ms) | 145.56 requests/s (21 ms) | 4.0 times more |
+
+EXPLAIN (ANALYZE, BUFFERS), the dashboard's main query (`dashboard-explain-before-index.txt`, `dashboard-explain-after-index.txt`):
+
+| Scenario | Plan before | Time before | Plan after | Time after |
+|---|---|---|---|---|
+| Normal user, page 1 | parallel sequential scan, top-N sort | 46.4 ms | index scan backward, incremental sort | 0.15 ms |
+| Largest company, page 1 | parallel sequential scan, top-N sort | 43.0 ms | index scan backward, incremental sort | 0.21 ms |
+| Largest company, page 3,000 | parallel sequential scan, external disk sort | 139.7 ms | parallel sequential scan, external disk sort (unchanged) | 165.7 ms |
+
+The planner uses the index for the first pages but, for an offset of 149,950, still prefers scanning and sorting the company: reading 150,000 index entries and then 150,000 table rows is dearer. **The index fixes the pages people open, not deep offsets.** Keyset pagination would fix those; it is not planned (D-023).
+
+Other queries (PostgreSQL execution time, warm; the eight queries are in `index-experiments-queries.sql`):
+
+| Query | No index | With the index |
+|---|---|---|
+| Page 1, largest company | 41.3 ms | 0.06 ms |
+| Normal user, 2024 filter, page 1 | 43.0 ms | 0.06 ms |
+| Small company (15), page 1 | 39.8 ms | 0.06 ms |
+| Status-filtered page 1 (pending) | 57.3 ms | 0.30 ms |
+| Deep page 3,000 | 190 ms | 193 ms |
+| Status list (`SELECT DISTINCT`), largest company | 61.3 ms | 57.5 ms (not helped) |
+| Export batch by id, no date filter | 4.9 ms | 4.1 ms (unchanged: uses the primary key) |
+| Export batch with a one-year date filter | 27.2 ms | 27.0 ms (unchanged: uses the primary key) |
+
+### Build, size and writes
+
+- **Build:** 0.34 s concurrently on 500,000 rows (0.30 s on a second run; a plain, blocking build took 0.19 to 0.28 s). Index size 5.7 MB on a clean table (7.6 MB after the experiments added dead rows).
+- **Write overhead (throwaway experiments):** a single-row insert took 0.096 ms with no extra index and 0.088 ms with this index; a 100,000-row bulk insert took 1.46 s and 1.28 s. The differences are inside the noise, so the cost is not measurable at this size; each index still adds one tree insert per row and disk that grows with the table.
+- **Writes while it builds** (two clients inserting continuously; 265,328 inserts in 14 s while the real migration ran): maximum insert latency 10.0 ms, none over 50 ms. In the throwaway comparison (6 s, two clients): idle 4.7 ms maximum; concurrent build 19.1 ms maximum and no insert over 50 ms; a plain `CREATE INDEX` froze writers, maximum 210.3 ms with two inserts over 50 ms. On a table a hundred times larger a plain build would block writes for tens of seconds to minutes.
+- **Bullet:** the log stayed empty (0 bytes) across first, middle, last, past-the-end, filtered, status-filtered and invalid-filter requests.
+- **Page 1 unchanged:** both snapshots are identical to the committed baseline.
+- **Migration down and up on the dev database:** the index is dropped (0.005 s) and rebuilt (0.30 s), valid and ready each time.
+
+### Three-column alternative (evaluated, not chosen)
+
+`(company_id, assessment_date, id)` made the dashboard's first pages about three times faster again (page 1: 0.07 ms against 0.20 ms in the same experiment) and turned the export's one-year date batches into an index-only scan (27 ms to 4.3 ms), but the index is 19 MB against 5.7 MB, takes longer to build (0.50 s against 0.31 s) and costs more per write. The absolute gain on a dashboard page is about 0.1 ms. The spec's two-column index was kept; the three-column one is the documented option if the export's date filter becomes a hot path.
+
+### What is still slow
+
+- Deep pages (the cost of offset pagination).
+- The status list in the filter form: `SELECT DISTINCT` over the company's rows, about 58 ms on a cache miss (10-minute cache); no index allowed by the spec helps it.
+- The score reader (TKT-8) is the remaining Task 2 item and changes what the Score column shows, not how fast the page is.
 
 ## Page-1 snapshots (Req 27)
 

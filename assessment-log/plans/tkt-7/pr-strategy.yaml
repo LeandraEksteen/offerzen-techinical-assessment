@@ -1,0 +1,50 @@
+schema_version: 1
+key: TKT-7
+title: "Task 2: composite index for the dashboard and export date filter"
+jira: assessment-log/tickets/TKT-7.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-7 | Task 2: composite index for the dashboard and export date filter"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-7/composite-index
+    stack: rails
+    implements: []
+    role: none
+    requirements: [25, 26, 27]
+    scope:
+      - db/
+      - test/
+      - assessment-log/
+    changes: |
+      One migration adds an index on assessments (company_id, assessment_date), built CONCURRENTLY with the
+      DDL transaction disabled so writes are not blocked, dropping a leftover INVALID index of the same name
+      first so a retry after a failed build works. down drops it concurrently. db/schema.rb gains the index.
+      The old test that asserted the table has no secondary index becomes tests that the index exists, is
+      valid and ready, is the only one besides the primary key, and survives a down and up round trip.
+      Measure before and after (EXPLAIN ANALYZE, benchmark, ab), record build time, size, write overhead and
+      the effect on concurrent writes, and prove page 1 is unchanged.
+    stubs: none
+    tests:
+      - "UT-1 [positive] the migration disables the DDL transaction so the concurrent build is allowed"
+      - "UT-2 [positive] the composite index exists on (company_id, assessment_date) and is valid and ready in pg_index"
+      - "UT-3 [negative] the only secondary index on assessments is that one (no status index)"
+      - "UT-4 [positive] the migration rolls back (index dropped) and re-applies (index back, valid)"
+      - "UT-5 [edge] a leftover INVALID index of the same name is dropped and rebuilt valid when the migration runs again"
+      - "UT-6 [positive] the dashboard and the export return the same rows and order as before (existing tests pass unchanged)"
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Deploy the migration before or with the code; the code works with or without the index. In a Heroku-like release phase the concurrent build adds seconds to minutes on a large table and waits for older open transactions; a failed build leaves an INVALID index, which the migration clears on retry. Nothing is deployed in this exercise.
+manual_checks:
+  - "MC-1 [manual] local: EXPLAIN (ANALYZE, BUFFERS) before and after for page 1, a filtered page, a deep page, the status-options query, a status-filtered page and the export batches; record plans and times"
+  - "MC-2 [manual] local: benchmark after the change; append the row to the benchmarks table"
+  - "MC-3 [manual] local: snapshots for both views identical to the baseline; Bullet log empty"
+  - "MC-4 [manual] local: run the real migration on the dev database while writers insert; record build time, index size and the maximum write latency, against a plain (blocking) build"
+  - "MC-5 [manual] local: run the migration down and up on the dev database; confirm the index is valid each time"
+  - "MC-6 [manual] local: repeat the ab load test on the normal-user page"
+conflict_risks: []

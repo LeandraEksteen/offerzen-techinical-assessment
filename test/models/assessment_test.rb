@@ -38,10 +38,4 @@ class AssessmentTest < ActiveSupport::TestCase
     assert_not assessment.valid?
     assert assessment.errors[:company].any?
   end
-
-  test "has no secondary index on the assessments table" do
-    indexes = ActiveRecord::Base.connection.indexes(:assessments)
-
-    assert_empty indexes
-  end
 end
