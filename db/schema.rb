@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_100400) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_100500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -61,6 +61,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_100400) do
     t.date "assessment_date", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["company_id", "assessment_date"], name: "index_assessments_on_company_id_and_assessment_date"
   end
 
   create_table "companies", force: :cascade do |t|

@@ -1,0 +1,85 @@
+=== EXPLAIN normal (after)
+-- main query (normal)
+Limit  (cost=5.17..204.55 rows=51 width=500) (actual time=0.115..0.147 rows=51 loops=1)
+  Buffers: shared hit=67
+  ->  Incremental Sort  (cost=5.17..6084.37 rows=1555 width=500) (actual time=0.115..0.145 rows=51 loops=1)
+        Sort Key: assessment_date DESC, id DESC
+        Presorted Key: assessment_date
+        Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 56kB  Peak Memory: 56kB
+        Buffers: shared hit=67
+        ->  Index Scan Backward using index_assessments_on_company_id_and_assessment_date on assessments  (cost=0.42..6024.30 rows=1555 width=500) (actual time=0.016..0.127 rows=52 loops=1)
+              Index Cond: ((company_id = 2) AND (assessment_date >= '2024-01-01'::date) AND (assessment_date <= '2024-12-31'::date))
+              Buffers: shared hit=58
+Planning:
+  Buffers: shared hit=101 read=2
+Planning Time: 0.227 ms
+Execution Time: 0.153 ms
+-- one employee lookup (what the N+1 repeats once per row)
+Limit  (cost=0.29..8.31 rows=1 width=85) (actual time=0.011..0.011 rows=1 loops=1)
+  Buffers: shared hit=2 read=1
+  ->  Index Scan using employees_pkey on employees  (cost=0.29..8.31 rows=1 width=85) (actual time=0.010..0.010 rows=1 loops=1)
+        Index Cond: (id = 1)
+        Buffers: shared hit=2 read=1
+Planning:
+  Buffers: shared hit=15
+Planning Time: 0.031 ms
+Execution Time: 0.014 ms
+=== EXPLAIN big (after)
+-- main query (big)
+Limit  (cost=38.56..75.25 rows=51 width=500) (actual time=0.202..0.205 rows=51 loops=1)
+  Buffers: shared hit=85
+  ->  Incremental Sort  (cost=38.56..144154.18 rows=200354 width=500) (actual time=0.202..0.203 rows=51 loops=1)
+        Sort Key: assessment_date DESC, id DESC
+        Presorted Key: assessment_date
+        Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 76kB  Peak Memory: 76kB
+        Pre-sorted Groups: 1  Sort Method: quicksort  Average Memory: 80kB  Peak Memory: 80kB
+        Buffers: shared hit=85
+        ->  Index Scan Backward using index_assessments_on_company_id_and_assessment_date on assessments  (cost=0.42..135811.12 rows=200354 width=500) (actual time=0.018..0.157 rows=70 loops=1)
+              Index Cond: (company_id = 1)
+              Buffers: shared hit=76
+Planning:
+  Buffers: shared hit=92
+Planning Time: 0.311 ms
+Execution Time: 0.213 ms
+-- one employee lookup (what the N+1 repeats once per row)
+Limit  (cost=0.29..8.31 rows=1 width=85) (actual time=0.002..0.002 rows=1 loops=1)
+  Buffers: shared hit=3
+  ->  Index Scan using employees_pkey on employees  (cost=0.29..8.31 rows=1 width=85) (actual time=0.002..0.002 rows=1 loops=1)
+        Index Cond: (id = 1)
+        Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=15
+Planning Time: 0.022 ms
+Execution Time: 0.005 ms
+=== EXPLAIN deep (after)
+-- main query (deep)
+Limit  (cost=79968.35..79974.30 rows=51 width=500) (actual time=157.791..161.886 rows=51 loops=1)
+  Buffers: shared hit=11281 read=22018, temp read=14436 written=17037
+  ->  Gather Merge  (cost=62472.96..81953.22 rows=166962 width=500) (actual time=113.761..158.556 rows=150001 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=11281 read=22018, temp read=14436 written=17037
+        ->  Sort  (cost=61472.93..61681.64 rows=83481 width=500) (actual time=96.872..107.406 rows=50066 loops=3)
+              Sort Key: assessment_date DESC, id DESC
+              Sort Method: external merge  Disk: 35216kB
+              Buffers: shared hit=11281 read=22018, temp read=14436 written=17037
+              Worker 0:  Sort Method: external merge  Disk: 31896kB
+              Worker 1:  Sort Method: external merge  Disk: 33688kB
+              ->  Parallel Seq Scan on assessments  (cost=0.00..35815.21 rows=83481 width=500) (actual time=0.020..31.907 rows=66667 loops=3)
+                    Filter: (company_id = 1)
+                    Rows Removed by Filter: 100000
+                    Buffers: shared hit=11193 read=22018
+Planning:
+  Buffers: shared hit=92
+Planning Time: 0.223 ms
+Execution Time: 165.691 ms
+-- one employee lookup (what the N+1 repeats once per row)
+Limit  (cost=0.29..8.31 rows=1 width=85) (actual time=0.007..0.007 rows=1 loops=1)
+  Buffers: shared hit=6
+  ->  Index Scan using employees_pkey on employees  (cost=0.29..8.31 rows=1 width=85) (actual time=0.007..0.007 rows=1 loops=1)
+        Index Cond: (id = 1)
+        Buffers: shared hit=6
+Planning:
+  Buffers: shared hit=15
+Planning Time: 0.022 ms
+Execution Time: 0.010 ms
