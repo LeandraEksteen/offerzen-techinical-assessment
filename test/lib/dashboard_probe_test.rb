@@ -13,7 +13,7 @@ class DashboardProbeTest < ActiveSupport::TestCase
   def add_rows(count)
     count.times do |n|
       employee = @company.employees.create!(name: "Person #{n}", email: "person#{n}@example.test")
-      Assessment.create!(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n, status: "pending", responses_json: { "score" => 20 + n })
+      legacy_assessment(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n, status: "pending", responses_json: { "score" => 20 + n })
     end
   end
 
@@ -59,7 +59,7 @@ class DashboardProbeTest < ActiveSupport::TestCase
     company_two = create_company(name: "Company 02")
     create_admin(company: company_two, email: "admin2@company-2.example.test")
     employee = company_two.employees.create!(name: "Person", email: "person@example.test")
-    3.times { Assessment.create!(company: company_two, employee: employee, assessment_date: Date.new(2024, 6, 1), status: "done") }
+    3.times { legacy_assessment(company: company_two, employee: employee, assessment_date: Date.new(2024, 6, 1), status: "done") }
     io = StringIO.new
 
     DashboardBenchmark.new(keys: [ "normal" ], runs: 2, password: TEST_PASSWORD, output: io, enforce_development: false).call

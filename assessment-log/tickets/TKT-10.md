@@ -2,7 +2,7 @@
 key: TKT-10
 type: Task
 title: Task 3: status validation, default, cut-over date switch, dropdown
-status: To Do
+status: In Review
 parent: EPIC-1
 updated: 2026-11-07T08:28:15Z
 ---
@@ -34,3 +34,5 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: `Assessment::STATUSES`, default `pending` for nil on create, status validation only when the status is being set, date switch via `STATUS_CUTOVER_DATE` (`config.x.status_cutover_date`; unset enforces; invalid stops boot), one count log line per would-be rejection (per-process count, no value), the TKT-9 screen is now a five-option dropdown that always refuses other values. The free-text version stays in git history (TKT-9). Test helper `create_assessment` saves legacy rows with `validate: false`. 178 runs, 0 failures; rubocop, brakeman, bundler-audit clean. Manual checks on the dev server (curl, cut-over 2099): five options and no text field, empty and free-text submits 422, valid submit saved, console count line seen once. Historical rows are not touched here (the backfill is only designed, in TKT-11).
+

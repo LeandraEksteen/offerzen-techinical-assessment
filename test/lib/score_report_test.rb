@@ -9,7 +9,7 @@ class ScoreReportTest < ActiveSupport::TestCase
   def add(json)
     @counter += 1
     employee = @company.employees.create!(name: "E#{@counter}", email: "e#{@counter}@example.test")
-    Assessment.create!(company: @company, employee: employee, assessment_date: Date.current, responses_json: json)
+    legacy_assessment(company: @company, employee: employee, assessment_date: Date.current, responses_json: json)
   end
 
   def report(batch: 3)

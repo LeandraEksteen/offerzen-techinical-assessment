@@ -67,7 +67,14 @@ module ActiveSupport
 
     def create_assessment(company:, **attributes)
       employee = company.employees.create!(name: "Test Employee", email: "employee@example.test")
-      Assessment.create!({ company: company, employee: employee, assessment_date: Date.current }.merge(attributes))
+      legacy_assessment({ company: company, employee: employee, assessment_date: Date.current }.merge(attributes))
+    end
+
+    # Saved without validations or defaults: the table holds ten years of legacy statuses
+    # (nil, "", "Complete ", "done"), and tests need those. Status rules are tested with
+    # Assessment.create / update (test/models/assessment_test.rb).
+    def legacy_assessment(attributes)
+      Assessment.new(attributes).tap { |assessment| assessment.save!(validate: false) }
     end
   end
 end

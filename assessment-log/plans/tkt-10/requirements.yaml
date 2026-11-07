@@ -1,0 +1,76 @@
+---
+schema_version: 1
+key: TKT-10
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 29
+  summary: Ruby-side validation allows only the five canonical statuses, on create
+    and when status changes
+  category: business-rule
+  source: user:2026-11-07
+  source_text: we should rather prevent any non standard value being written on the
+    ruby side
+  acceptance: Canonical values are pending, in_progress, completed, needs_follow_up,
+    archived; saving a record with any other value (including case or whitespace variants
+    of them) fails validation with a clear message; the check runs only when status
+    is being set, so updating another field on a legacy row with a dirty status still
+    succeeds; there is no alias mapping on write.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-E accepted)
+  supersedes: my proposal to map known aliases on write
+  domain: status
+  risk:
+  - state-transition
+- id: 40
+  summary: A change request with a cut-over date prepares assessors; before the date
+    the app only counts would-be rejections
+  category: operational
+  source: user:2026-11-07
+  source_text: in real life we would make a Change Request/Brief for the assessors
+    with a cut over date. So they would be prepared.
+  acceptance: SOLUTION.md outlines the change request (what changes, the dropdown,
+    the cut-over date, who to contact); a configured cut-over date makes Req 29 log
+    a count of would-be rejections with no values before the date and reject on and
+    after it; a test covers both sides of the date.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-E accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition
+- id: 41
+  summary: A small assessor input screen shows the move from free-text status to a
+    validated dropdown
+  category: functional
+  source: user:2026-11-07
+  source_text: we can create a small assessor side input screen to show the before
+    (freetext) to the after (dropdown with validation)
+  acceptance: One form edits an assessment's status for signed-in admins of its company
+    (existing sign-in, no new role); the baseline version offers a free-text field;
+    the later version offers a dropdown of the five values that cannot be saved empty,
+    with server-side validation from Req 29; both versions are visible in git history.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-C, T3-F accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition
+  - permissions
+- id: 44
+  summary: New records without a status get a default
+  category: edge-case
+  source: user:2026-11-07
+  source_text: the page obviosuly cant be saved without an input
+  acceptance: Creating an assessment with no status stores pending; creating one with
+    a non-canonical status fails validation (Req 29); a test covers both.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-I accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition

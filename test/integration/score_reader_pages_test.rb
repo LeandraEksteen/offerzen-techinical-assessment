@@ -19,7 +19,7 @@ class ScoreReaderPagesTest < ActionDispatch::IntegrationTest
   def add_assessment(**attributes)
     @counter += 1
     employee = @company.employees.create!(name: "Employee #{@counter}", email: "employee#{@counter}@example.test")
-    Assessment.create!({ company: @company, employee: employee, assessment_date: Date.current }.merge(attributes))
+    legacy_assessment({ company: @company, employee: employee, assessment_date: Date.current }.merge(attributes))
   end
 
   def dashboard_scores

@@ -25,7 +25,7 @@ class StatusOptionsTest < ActiveSupport::TestCase
     assessment = create_assessment(company: @company, status: "pending")
     assert_equal [ [ "pending", "pending" ] ], StatusOptions.new(@company).entries
 
-    assessment.update!(status: "Brand New")
+    assessment.update_columns(status: "Brand New") # a legacy writer: the validation does not see it
     assert_equal [ [ "pending", "pending" ] ], StatusOptions.new(@company).entries
 
     StatusOptions.forget(@company)

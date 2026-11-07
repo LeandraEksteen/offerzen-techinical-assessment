@@ -1,12 +1,31 @@
 <h1>Edit status</h1>
 <p><%= link_to "Back to dashboard", dashboard_path %></p>
 
+<% if @error %>
+  <p role="alert"><%= @error %></p>
+<% end %>
+
 <p>Assessment <%= @assessment.id %>, dated <%= @assessment.assessment_date %>.</p>
+
+<% canonical = Assessment::STATUSES.include?(@assessment.status) %>
+<% unless canonical %>
+  <p>
+    <% if @assessment.status.blank? %>
+      No standard status is set.
+    <% else %>
+      Current value "<%= @assessment.status %>" is not a standard status.
+    <% end %>
+    Choose one below.
+  </p>
+<% end %>
 
 <%= form_with model: @assessment, url: assessment_path(@assessment), method: :patch do |form| %>
   <p>
     <%= form.label :status, "Status" %>
-    <%= form.text_field :status %>
+    <%= form.select :status,
+          Assessment::STATUSES.map { |status| [ status.humanize, status ] },
+          { prompt: "Choose a status", selected: (@assessment.status if canonical) },
+          { required: true } %>
   </p>
   <%= form.submit "Save" %>
   <%= link_to "Cancel", dashboard_path %>
