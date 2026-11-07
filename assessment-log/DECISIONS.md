@@ -136,3 +136,10 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **Filter list:** saving forgets the company's cached status list so the new value shows in the filter at once.
 - **Accepted for now:** `status` is not filtered from request logs (the formatter masks email-shaped text only) and the field has no length cap; both end when TKT-10 limits the value to five options.
 
+## D-028: Status rule, cut-over date and dropdown (TKT-10)
+- **The rule:** only pending, in_progress, completed, needs_follow_up, archived, checked when a status is being set (new record or changed status), never when it is unchanged, so a legacy row with a dirty status can still be updated. No alias mapping on write. A new assessment with no status (nil) starts as pending; an empty string is not "no status" and fails.
+- **The cut-over date:** `STATUS_CUTOVER_DATE` (ISO date, inclusive) read once at boot. Before it a would-be rejection saves and logs one count line with no value (`status validation: would reject after cut-over (count=N)`, per-process count, an indication not an audit). On and after it the save fails with a clear message. Unset means enforce now (the end state is the default); an invalid value stops boot so the rule can never silently never apply.
+- **The screen:** the TKT-9 text field is a five-option dropdown. The screen itself always refuses anything else, empty included, whatever the date, because the dropdown is live from day one. A legacy value is shown as a note with a required "Choose a status" prompt, so Save cannot silently turn an old value into pending.
+- **Accepted bypasses:** the seeder (`insert_all`), `update_all`, `update_columns` and the console skip the validation. They are the legacy and migration paths (the backfill will use them), not user input; there is no database constraint (Req 30 dropped).
+- **Historical records:** nothing here changes them. The backfill is designed, not executed (TKT-11 and TKT-12), and reuses `Assessment::STATUSES`.
+

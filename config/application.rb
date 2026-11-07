@@ -28,6 +28,19 @@ module OfferzenTechinicalAssessment
     # served only through ExportsController#show, so draw none of those routes.
     config.active_storage.draw_routes = false
 
+    # The day (inclusive) from which a non-canonical assessment status is rejected
+    # (Assessment). Before it the app only counts what it would have rejected. An ISO
+    # date in STATUS_CUTOVER_DATE; unset means the rule is enforced now; anything that
+    # is not an ISO date stops the app at boot rather than silently never enforcing.
+    config.x.status_cutover_date =
+      if ENV["STATUS_CUTOVER_DATE"].present?
+        begin
+          Date.iso8601(ENV["STATUS_CUTOVER_DATE"])
+        rescue Date::Error
+          raise ArgumentError, "STATUS_CUTOVER_DATE must be an ISO date such as 2026-12-01"
+        end
+      end
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

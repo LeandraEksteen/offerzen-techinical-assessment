@@ -1,0 +1,61 @@
+schema_version: 1
+key: TKT-10
+title: "Task 3: status validation, default, cut-over date switch, dropdown"
+jira: assessment-log/tickets/TKT-10.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-10 | Task 3: status validation, default, cut-over date switch, dropdown"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-10/status-validation
+    stack: rails
+    implements: []
+    role: none
+    requirements: [29, 40, 41, 44]
+    scope:
+      - app/models/assessment.rb
+      - app/controllers/assessments_controller.rb
+      - app/views/assessments/
+      - config/application.rb
+      - test/
+      - assessment-log/
+    changes: |
+      Add Assessment::STATUSES (pending, in_progress, completed, needs_follow_up, archived), a default of
+      pending for a new assessment with no status (nil only), and a status validation that runs only when the
+      status is being set (new record or changed status), with no alias mapping. The cut-over date comes from
+      STATUS_CUTOVER_DATE (ISO date, read once into config.x.status_cutover_date; unset means enforce; an
+      invalid value fails at boot): before the date a would-be rejection saves anyway and logs one line with a
+      running per-process count and no value; on and after the date it fails validation with a clear message.
+      The TKT-9 free-text field becomes a five-value dropdown with no blank choice; the screen itself always
+      refuses anything but the five values (empty included), whatever the date. The TKT-9 free-text version
+      stays in git history. Test helper create_assessment saves with validate: false so tests can still hold
+      legacy statuses.
+    stubs: none
+    tests:
+      - "UT-1 [positive] the five canonical values save on create and when changed"
+      - "UT-2 [negative] case, whitespace and unknown variants (and blank) fail with a clear message on create and on a status change"
+      - "UT-3 [edge] updating another field on a legacy row with a dirty status still succeeds"
+      - "UT-4 [edge] changing a dirty status to another non-canonical value fails; to a canonical value succeeds"
+      - "UT-5 [positive] creating with no status stores pending"
+      - "UT-6 [negative] creating with a non-canonical status (including an empty string) fails"
+      - "UT-7 [positive] before the cut-over date a non-canonical status saves and one count line is logged with no value"
+      - "UT-8 [positive] on and after the cut-over date it is rejected and no count line is logged"
+      - "UT-9 [edge] the day before and the day of the date; unset enforces; an invalid configured value fails at boot with a clear message"
+      - "UT-10 [positive] the edit screen shows a select of the five values, no text field, no selectable blank, and the legacy value only as a note"
+      - "UT-11 [positive] saving a chosen value stores it, redirects to the dashboard with a notice and forgets the cached filter list"
+      - "UT-12 [negative] the screen refuses empty, missing or non-canonical values, before and after the date, and changes nothing"
+      - "UT-13 [negative] another company's assessment is a 404 and signed out is redirected (TKT-9 cases kept)"
+      - "UT-14 [edge] the count log line and the validation message hold no status value and no email"
+    test_command: >-
+      bin/rails test test/models/assessment_test.rb test/controllers/assessments_controller_test.rb test/services/status_options_test.rb
+    lint_command: bin/rubocop
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: No migration. Set STATUS_CUTOVER_DATE (ISO date) in the environment before deploy to choose when rejection starts; unset enforces at once. The change request telling assessors about the dropdown and the date must go out before that date (outlined in SOLUTION.md by TKT-12). Safe to deploy at any time; no table lock.
+manual_checks:
+  - "MC-1 [manual] local dev server with a future cut-over date: save a status from the dropdown, see the count line only for a would-be rejection made in the console, nothing in the log carries a value"
+  - "MC-2 [manual] local dev server: the dropdown shows the five options, a legacy row asks for an explicit choice, a hand-crafted empty submit is refused"
+conflict_risks: []

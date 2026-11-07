@@ -12,7 +12,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   def add_assessment(company: @company, **attributes)
     @counter += 1
     employee = company.employees.create!(name: "Employee #{@counter}", email: "employee#{@counter}@example.test")
-    Assessment.create!({ company: company, employee: employee, assessment_date: Date.current }.merge(attributes))
+    legacy_assessment({ company: company, employee: employee, assessment_date: Date.current }.merge(attributes))
   end
 
   def table_rows
@@ -377,7 +377,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   # UT-5 (TKT-6)
   test "several assessments sharing one employee each show that employee's email" do
     employee = @company.employees.create!(name: "Shared Person", email: "shared.person@example.test")
-    3.times { |n| Assessment.create!(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n) }
+    3.times { |n| legacy_assessment(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n) }
     other = add_assessment(assessment_date: "2025-06-01")
     sign_in_as @admin
 
