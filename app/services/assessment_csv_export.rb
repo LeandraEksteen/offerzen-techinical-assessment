@@ -60,10 +60,9 @@ class AssessmentCsvExport
   # One company's rows after last_id, in id order. The company comes from the
   # export request, which came from the signed-in admin.
   def batch(last_id)
-    scope = @export_request.company.assessments.where("assessments.id > ?", last_id)
-    scope = scope.where("assessments.assessment_date >= ?", @export_request.date_from) if @export_request.date_from
-    scope = scope.where("assessments.assessment_date <= ?", @export_request.date_to) if @export_request.date_to
-    scope = scope.where(*Array(StatusOptions.condition(@export_request.status_filter))) if @export_request.status_filter
+    scope = @export_request.company.assessments
+                           .matching(date_from: @export_request.date_from, date_to: @export_request.date_to, status: @export_request.status_filter)
+                           .where("assessments.id > ?", last_id)
     scope.reorder("assessments.id").limit(@batch_size)
          .pluck(:id, :assessment_date, :created_at, :status, Arel.sql(SCORE_SQL), :employee_id)
   end

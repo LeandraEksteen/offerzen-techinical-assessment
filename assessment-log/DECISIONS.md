@@ -96,3 +96,11 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **One export in progress per admin**, enforced by a validation and a partial unique index.
 - **Operational notes for SOLUTION.md:** production needs a job worker (`bin/jobs` or `SOLID_QUEUE_IN_PUMA`) and S3-style storage because the local disk is ephemeral; development runs jobs in-process.
 
+## D-022: The Task 2 baseline and how it is measured (TKT-4)
+- **Baseline first.** A deliberately legacy-style dashboard (no pagination, each row reads its employee through the association, score shown as stored) was built and measured before any improvement, in development with Bullet, rack-mini-profiler and log writing off: median of 5 after a warm-up, one run with a 10-minute limit for the largest company. The numbers and method are in `assessment-log/benchmarks/task-2-dashboard.md`.
+- **Result that shapes the plan:** the main query takes 44 to 153 ms while the page takes 0.4 s, 3.9 s and 58 s for the three scenarios, so most of the time is Ruby (per-row objects, per-row employee queries, rendering). Pagination and eager loading are expected to matter far more than the index.
+- **The seed was made more realistic:** about one employee per ten assessments. With 40 employees per company the query cache hid the N+1.
+- **Load test tool:** `ab` (ApacheBench, already installed) instead of `hey` or `k6`; Req 22 amended.
+- **The two filters live in one place:** `Assessment.matching` is used by both the dashboard and the export, so they cannot disagree.
+- **Page-1 snapshots** (without emails) are kept so each later change can prove the page still shows the same rows (Req 27).
+

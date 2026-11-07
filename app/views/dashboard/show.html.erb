@@ -1,0 +1,51 @@
+<h1>Dashboard</h1>
+<p><%= link_to "Back to home", root_path %></p>
+
+<% if @errors.present? %>
+  <ul role="alert">
+    <% @errors.each do |message| %>
+      <li><%= message %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%= form_with url: dashboard_path, method: :get do |form| %>
+  <p>
+    <%= form.label :from, "From (assessment date)" %>
+    <%= form.date_field :from, value: params[:from] %>
+  </p>
+  <p>
+    <%= form.label :to, "To (assessment date)" %>
+    <%= form.date_field :to, value: params[:to] %>
+  </p>
+  <p>
+    <%= form.label :status, "Status" %>
+    <%= form.select :status, @status_entries, { include_blank: "All", selected: params[:status] } %>
+  </p>
+  <%= form.submit "Filter" %>
+<% end %>
+
+<% if @assessments %>
+  <table>
+    <thead>
+      <tr>
+        <th>Employee email</th>
+        <th>Employee id</th>
+        <th>Assessment date</th>
+        <th>Status</th>
+        <th>Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @assessments.each do |assessment| %>
+        <tr>
+          <td><%= assessment.employee.email %></td>
+          <td><%= assessment.employee_id %></td>
+          <td><%= assessment.assessment_date %></td>
+          <td><%= assessment.status %></td>
+          <td><%= stored_score(assessment) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
