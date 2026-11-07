@@ -24,6 +24,10 @@ module OfferzenTechinicalAssessment
     # production.rb builds its own logger, so it passes this formatter too.
     config.log_formatter = Pii::LogFormatter.new
 
+    # Active Storage's default blob links work without signing in. Exports are
+    # served only through ExportsController#show, so draw none of those routes.
+    config.active_storage.draw_routes = false
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

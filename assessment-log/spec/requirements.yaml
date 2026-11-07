@@ -58,7 +58,7 @@ requirements:
     category: functional
     source: "user:2026-11-07"
     source_text: "For an assessment I would assume there would be a created_date and an assessment_date ... So let's have the filter work on assessment date"
-    acceptance: "The export form has only a date range (on assessment_date, inclusive, whole UTC days, either end optional) and a status select; blank status means all; an invalid date or an unknown status returns 422 with a plain message and creates no export; there is no row cap."
+    acceptance: "The export form has only a date range (on assessment_date, inclusive, whole UTC days, either end optional) and a status select; blank status means all; an invalid date, a start date after the end date, or an unknown status returns 422 with a plain message and creates no export; there is no row cap."
     status: active
     blocked_on: null
     decided_by: "user, 2026-11-07"
@@ -118,7 +118,7 @@ requirements:
     category: edge-case
     source: "user:2026-11-07"
     source_text: "T1-8 Yes exactly"
-    acceptance: "A job error sets the row to 'failed' with the generic text 'Export failed, please try again' and no data or technical detail in the UI or logs; there is no automatic retry; a second click while one is in progress shows 'an export is already in progress' and creates nothing; files older than 7 days are deleted and their row shows 'expired'."
+    acceptance: "A job error sets the row to 'failed' with the generic text 'Export failed, please try again' and no data or technical detail in the UI or logs; there is no automatic retry; a second click while one is in progress shows 'an export is already in progress' and creates nothing; an export still in progress after 30 minutes counts as failed so a new one can start; files older than 7 days are deleted and their row shows 'expired'."
     status: active
     blocked_on: null
     decided_by: "user, 2026-11-07"

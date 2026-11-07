@@ -12,13 +12,15 @@ module PiiAttributes
   class_methods do
     def pii_attributes(*names)
       names = names.map(&:to_sym)
+      new_names = names.map(&:to_s) - Pii::Registry.all_names
       Pii::Registry.register(self.name, names)
       self.filter_attributes += (names - filter_attributes)
 
       # Rails reads this same array on every request, so adding to it here
-      # takes effect without a restart.
-      parameter_filters = Rails.application.config.filter_parameters
-      names.each { |attribute| parameter_filters << attribute unless parameter_filters.include?(attribute) }
+      # takes effect without a restart. Rails may already have compiled the
+      # symbols in it into one regexp, so "already there?" is answered by our
+      # own registry rather than by looking in the array.
+      new_names.each { |attribute| Rails.application.config.filter_parameters << attribute.to_sym }
     end
 
     def pii_attribute_names

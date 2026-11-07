@@ -27,6 +27,9 @@
     <% if flash[:alert] %>
       <p role="alert"><%= flash[:alert] %></p>
     <% end %>
+    <% if flash[:notice] %>
+      <p role="status"><%= flash[:notice] %></p>
+    <% end %>
     <%= yield %>
   </body>
 </html>

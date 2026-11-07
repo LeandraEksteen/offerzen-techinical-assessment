@@ -77,10 +77,10 @@ Where several requirements decide one outcome: Req 15 (contract) decides what a 
 | Export vs email | User raised email as an alternative | User, 2026-11-07: S3 route, email a nice-to-have | Stored file; email out of scope (Req 37) |
 
 ## Edge cases and failure behaviour
-- Req 5: an invalid date or unknown status gives 422 and creates no export.
+- Req 5: an invalid date, a start date after the end date, or an unknown status gives 422 and creates no export (amended 2026-11-07 during TKT-3 planning).
 - Req 6: `Complete`, `complete `, `COMPLETE` group to one option; nil, empty and blank-only are one "(no status)" option; `n/a` stays separate.
 - Req 9 and 28: a non-number score exports blank; a non-object `responses_json` exports blank.
-- Req 10: a failed job shows a generic message; a second click is refused while one runs; files expire after 7 days.
+- Req 10: a failed job shows a generic message; a second click is refused while one runs; an export in progress for more than 30 minutes counts as failed (amended 2026-11-07 during TKT-3 planning); files expire after 7 days.
 - Req 15 and 16: strings with `%`, a decimal comma, alias keys and double-encoded JSON are handled; `1,234`, `N/A`, out-of-range numbers and proportions are not; any unexpected error in a row shows "Score not available" and the page stays up.
 - Req 23: bad page values never return an error status; ties in date do not duplicate or skip rows.
 - Req 29: validation runs only when status is set, so updating another field on a legacy row with a dirty status still works; a new record without a status becomes pending (Req 44).

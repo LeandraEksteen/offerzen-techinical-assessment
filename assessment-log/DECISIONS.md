@@ -88,3 +88,11 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **Primary protection is not logging data:** job arguments are ids or records only and are not logged; bulk SQL is not logged (the seeder silences it).
 - **Known limits:** positional values in bulk `INSERT` SQL cannot be matched by attribute name (only emails are caught); `as_json`, `pluck` and rendered HTML are not scrubbed; the global parameter filter also hides any parameter called `name`; the development error page can show values.
 
+## D-021: How the export works (TKT-3)
+- **Asynchronous with a history table.** `ExportRequest` records the filters; `ExportJob` takes the record, builds the CSV in batches of 5,000 into a tempfile and attaches it with Active Storage; the history shows the 20 most recent exports of the admin's company. A 200,000-row export took 3.8 seconds locally.
+- **Download is authorised, not a link.** Active Storage's default blob links work without signing in, so its routes are not drawn and the file is served only through `ExportsController#show`, found through the signed-in admin's company (another company's export is a 404).
+- **Only six fixed columns leave the system.** The score is read inside the database and only if it is a JSON number, so free text never reaches Ruby; the exporter refuses to run if a column is a declared PII attribute; status cells are guarded against spreadsheet formulas.
+- **Two behaviours added during planning (spec amended):** a start date after the end date is rejected with 422; an export in progress for more than 30 minutes counts as failed so the admin can retry.
+- **One export in progress per admin**, enforced by a validation and a partial unique index.
+- **Operational notes for SOLUTION.md:** production needs a job worker (`bin/jobs` or `SOLID_QUEUE_IN_PUMA`) and S3-style storage because the local disk is ephemeral; development runs jobs in-process.
+

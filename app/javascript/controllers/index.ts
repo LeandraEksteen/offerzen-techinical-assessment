@@ -4,5 +4,8 @@
 
 import { application } from "./application"
 
+import ExportFormController from "./export_form_controller"
+application.register("export-form", ExportFormController)
+
 import HelloController from "./hello_controller"
 application.register("hello", HelloController)

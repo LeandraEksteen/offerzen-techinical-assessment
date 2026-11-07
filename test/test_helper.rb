@@ -45,9 +45,35 @@ module ActiveSupport
       values.each { |value| assert_not_includes log, value, "log leaked #{value.length} characters of a sensitive value" }
     end
 
+    def create_export(company:, admin:, **attributes)
+      ExportRequest.create!({ company: company, admin: admin }.merge(attributes))
+    end
+
+    # Runs the export for a request into memory and returns the parsed CSV.
+    def export_csv(export, **options)
+      io = StringIO.new
+      AssessmentCsvExport.new(export, **options).write_to(io)
+      CSV.parse(io.string, headers: true)
+    end
+
+    # Makes building the export fail with the given message, then restores it.
+    def with_failing_export(message)
+      original = AssessmentCsvExport.method(:new)
+      AssessmentCsvExport.define_singleton_method(:new) { |*| raise message }
+      yield
+    ensure
+      AssessmentCsvExport.define_singleton_method(:new, original)
+    end
+
     def create_assessment(company:, **attributes)
       employee = company.employees.create!(name: "Test Employee", email: "employee@example.test")
       Assessment.create!({ company: company, employee: employee, assessment_date: Date.current }.merge(attributes))
     end
+  end
+end
+
+class ActionDispatch::IntegrationTest
+  def sign_in_as(admin)
+    post session_url, params: { email: admin.email, password: TEST_PASSWORD }
   end
 end
