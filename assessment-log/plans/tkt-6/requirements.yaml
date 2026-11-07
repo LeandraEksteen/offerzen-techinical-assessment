@@ -1,0 +1,50 @@
+---
+schema_version: 1
+key: TKT-6
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 24
+  summary: Eager loading removes the N+1 on employees
+  category: functional
+  source: user:2026-11-07
+  source_text: Eager loading is something bullet would also show
+  acceptance: Bullet reports no N+1 on the dashboard; the query count for a page is
+    constant regardless of rows; only the employee columns the page needs are loaded;
+    before and after numbers are recorded.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: performance
+  risk: []
+- id: 26
+  summary: Performance changes ship one at a time, each with measured results
+  category: operational
+  source: user:2026-11-07
+  source_text: No changing things and saying 'it feels faster'
+  acceptance: Baseline, pagination, eager loading, index and the score reader are
+    separate changes, each revertible alone; each records before and after numbers
+    (time and query count); SOLUTION.md has the before/after note and why each step
+    was chosen; no claim in the docs lacks a number.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: performance
+  risk: []
+- id: 27
+  summary: The page keeps working through each change
+  category: edge-case
+  source: prd:OfferZen assignment PDF §Task 2
+  source_text: Keep the page working while you improve it.
+  acceptance: Before and after each change, page 1 of the seeded big company shows
+    the same rows in the same order with the same values (apart from scores fixed
+    by the score reader); the page returns 200 for every status and date filter combination
+    in the seed.
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: dashboard
+  risk: []

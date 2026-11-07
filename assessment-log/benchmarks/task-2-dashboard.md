@@ -71,7 +71,7 @@ One employee lookup (what the N+1 repeats per row) is a primary-key index scan t
 |---|---|---|---|---|---|---|
 | Baseline | TKT-4 | 421 | 3,921 | 58,019 | 1,414 | this file |
 | Pagination (page 1) | TKT-5 | 66 | 60 | 61 | 53 | page 1 of each scenario; HTML 12 KB; deep page 183 ms (below) |
-| Eager loading | TKT-6 | | | | | |
+| Eager loading | TKT-6 | 49 | 42 | 44 | 4 | page 1 of each scenario; deep page 162 ms (below) |
 | Composite index | TKT-7 | | | | | |
 | Score reader | TKT-8 | | | | | |
 
@@ -103,6 +103,38 @@ EXPLAIN of the main query: page 1 is now a top-N heapsort (memory 102 kB) over a
 What is left: each page still runs about 50 employee queries (the N+1, TKT-6), and the database still scans and sorts the whole company to find the first 50 rows (TKT-7).
 
 **Page 1 is unchanged (Req 27):** `dashboard:snapshot` for both views (the largest company with no filters, and with the 2024 filter) is byte-for-byte identical to the committed baseline snapshots (sha256 `92cb8fea...` and `acd21db3...`).
+
+## After eager loading (TKT-6, 2026-11-07)
+
+Same machine, conditions and method. The page's employees now arrive in one query that selects only `id` and `email`, instead of one query per row.
+
+| Scenario | Rows | SQL queries run | Median ms (min-max) | HTML size |
+|---|---|---|---|---|
+| Company 02, assessment dates in 2024, page 1 | 50 | 4 | 49 (46-58) | 12 KB |
+| Company 02, all rows, page 1 | 50 | 4 | 42 (41-45) | 12 KB |
+| Company 01 (largest), all rows, page 1 | 50 | 4 | 44 (42-46) | 12 KB |
+| Company 01 (largest), page 3,000 (offset 149,950) | 50 | 4 | 162 (155-169) | 12 KB |
+
+| Scenario | After pagination (TKT-5) | After eager loading (TKT-6) | Change |
+|---|---|---|---|
+| Normal user: time | 66 ms | 49 ms | 26% faster |
+| Normal user: SQL queries | 53 | 4 | 13 times fewer |
+| Company 02, page 1: time | 60 ms | 42 ms | 30% faster |
+| Company 01, page 1: time | 61 ms | 44 ms | 28% faster |
+| Company 01, page 1: SQL queries | 53 | 4 | 13 times fewer |
+| Company 01, deep page 3,000: time | 183 ms | 162 ms | 11% faster |
+| `ab`, concurrency 1 | 15.40 requests/s (65 ms) | 19.84 requests/s (50 ms) | 29% more |
+| `ab`, concurrency 3 | 29.26 requests/s (102 ms) | 34.10 requests/s (88 ms) | 17% more |
+| `ab`, 200 requests, concurrency 3 | 28.20 requests/s (106 ms) | 37.79 requests/s (79 ms) | 34% more |
+
+Against the original baseline (TKT-4) the normal-user page went from 421 ms and 1,414 queries to 49 ms and 4 queries.
+
+- **The query count is constant:** 4 for a page of 3, 20 or 50 rows (a unit test proves it), and 4 on every page measured.
+- **The employee query:** `SELECT "employees"."id", "employees"."email" FROM "employees" WHERE "employees"."id" IN (...)`, 0.9 ms for a page; the assessments query still takes about 41 ms.
+- **Bullet:** the log stayed empty (0 bytes) across the first, a middle, the last and a past-the-end page, a filtered page and an invalid-filter request: no N+1 and no unused eager loading.
+- **Page 1 is unchanged:** both snapshots are identical to the committed baseline (same sha256 values as before).
+- **A smaller gain than the query count suggests, as predicted:** the 50 per-row lookups only cost about 15 to 20 ms in total because each is a fast primary-key lookup. What remains is dominated by the main assessments query (about 41 ms), which scans and sorts the whole company without an index; that is TKT-7.
+- **A cost noticed on the way:** the status list in the filter form runs `SELECT DISTINCT ... FROM assessments WHERE company_id = ...` (about 59 ms for the largest company) whenever its 10-minute cache is empty. Hot in the benchmark (cached by the warm-up) but a real cost for the first page view after the cache expires. It scans the same rows an index on the company would help; recorded for TKT-7 and the write-up.
 
 ## Page-1 snapshots (Req 27)
 

@@ -3,6 +3,11 @@ class Assessment < ApplicationRecord
 
   belongs_to :company
   belongs_to :employee
+  # For list pages that show only the employee's email (the dashboard). Preloading this
+  # loads just id and email in one query for the whole page. Reading any other employee
+  # attribute through it raises (ActiveModel::MissingAttributeError) instead of silently
+  # running another query; use :employee when you need the rest.
+  belongs_to :employee_for_listing, -> { select(:id, :email) }, class_name: "Employee", foreign_key: :employee_id, inverse_of: false
 
   pii_attributes :employee_email, :responses_json
 

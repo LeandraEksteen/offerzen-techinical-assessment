@@ -109,3 +109,9 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **Page values:** anything that is not a whole number from 1 to 1,000,000 shows page 1 (also keeps the offset inside PostgreSQL's range); a page past the last shows an empty page with a message and a way back, status 200. Previous and Next carry only the date and status filters.
 - **Result:** the largest company's first page went from 58 s to 61 ms (199,064 queries to 53, 37 MB to 12 KB) and page 1 is identical to the baseline snapshots. The deep page (3,000) takes 183 ms: without an index the database still scans and sorts the whole company. That is TKT-7's job.
 
+## D-024: Eager loading with a column-limited association (TKT-6)
+- **Preload through a dedicated association** (`employee_for_listing`, selecting only id and email) rather than `includes(:employee)` or `eager_load`: a select on the relation does not apply to preloaded records, and a join would widen the paged, sorted main query. The page runs 4 queries however many rows it shows.
+- **Fail loudly:** reading another employee attribute through that association raises instead of silently adding a query, so a future change cannot quietly bring the N+1 back.
+- **The assessments columns are left alone:** the naive score needs `responses_json`; narrowing the query belongs to the score reader ticket.
+- **Result:** queries per page 53 to 4; time per page down about 25 to 30% (normal user 66 ms to 49 ms), smaller than the query count suggests because the per-row lookups were cheap and the 41 ms main query dominates. Bullet is silent and page 1 is identical to the baseline.
+

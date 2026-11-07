@@ -46,7 +46,7 @@
     <tbody>
       <% @assessments.each do |assessment| %>
         <tr>
-          <td><%= assessment.employee.email %></td>
+          <td><%= assessment.employee_for_listing.email %></td>
           <td><%= assessment.employee_id %></td>
           <td><%= assessment.assessment_date %></td>
           <td><%= assessment.status %></td>
