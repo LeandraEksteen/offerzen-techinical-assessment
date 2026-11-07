@@ -10,7 +10,7 @@ updated: 2026-11-07T08:28:15Z
 ## Description
 Take over a ten-year-old Rails app that manages employee ergonomic and health assessments for companies. Add a company-scoped CSV export, make the dashboard faster and its score trustworthy, and standardise status values with a safe release plan, without rewrites. The data is health related and the assessments table is large, so tenant isolation, privacy and not stalling the app drive every choice.
 
-Source of truth: `assessment-log/spec/spec.md` (approved) and `requirements.yaml` (45 requirements). Decisions: `assessment-log/DECISIONS.md`. Prompts: `assessment-log/PROMPTS.md`.
+Source of truth: `assessment-log/spec/spec.md` (approved) and `requirements.yaml` (44 requirements). Decisions: `assessment-log/DECISIONS.md`. Prompts: `assessment-log/PROMPTS.md`.
 
 **Out of scope for the epic:** database check constraint (Req 30), emailing the CSV (Req 37), an insecure legacy export (Req 38), polling, a global done-banner, score gating or alerts, staging or production measurement (Req 39), executing the historical backfill.
 

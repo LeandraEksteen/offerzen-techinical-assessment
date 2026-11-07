@@ -7,6 +7,8 @@ Working notes kept while completing this take-home. Optional reading for reviewe
 - [`spec/`](spec/): the approved spec (`spec.md`, `requirements.yaml`) the tickets are built from.
 - [`tickets/`](tickets/): `EPIC-1` and `TKT-1` to `TKT-12`, one groomed ticket per piece of work. Each PR links to its ticket.
 
+**Where to start:** the summary at the top of [`PROMPTS.md`](PROMPTS.md) describes how the planning was done and what the author decided. The aim of this folder is to show the thinking and working method, not only the code.
+
 Ground rules agreed up front:
 
 1. No commits or PRs without the author's explicit permission.

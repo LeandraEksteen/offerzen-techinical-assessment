@@ -1,6 +1,27 @@
 # Prompts
 
-Verbatim, in order. Summary to be added at the top when the work is complete.
+Verbatim, in order. 27 prompts so far, covering the planning phase. The summary below is for the planning phase and is extended when the build is done.
+
+## Summary: how the planning went
+
+**What this is.** The planning half of an OfferZen take-home (extend a legacy Rails app: a company-scoped CSV export, a faster dashboard with a trustworthy score, and a safe status normalisation). The work was done with an AI coding assistant. These prompts show how the author directed it.
+
+**How the author worked**
+- **Rules before code.** First prompt set the ground rules: no commits or PRs without permission, no assumptions (ask instead), and ticket everything as on a real team (one epic, one groomed ticket per task, one PR per ticket). Deliverables were handed over before the brief, so they stayed in view.
+- **Context before tasks, tasks before scaffold.** The brief was given in two steps, and the scaffold (tables, sign-in, seed data) was inferred from the tasks rather than assumed.
+- **A spec with provenance.** Every requirement is traced to its source (the brief or a dated author decision) in `spec/`. Questions were asked task by task, each with a recommended answer, and the answers were logged as decisions.
+- **Pushing back on recommendations with domain reasoning.** Several of the assistant's proposals were overruled for stated reasons: async instead of streaming (ten years of data, an already slow dashboard); filtering on `assessment_date`, not `created_at` (an assessment can be scheduled but not completed); a status dropdown built from stored values, since an alias list cannot be kept current without write-side enforcement; the database constraint dropped ("not the db's responsibility"); no "scores may differ" footnote, because a displayed score must not make the user doubt it.
+- **Treating health data carefully.** One shared PII scrubber for exports, logs and error logs; an export allow-list; email shown instead of name with a compliance caution; only distinct values and counts shared in the mapping sheet.
+- **Honesty about unknowns.** The score's shape is not in the brief. Rather than hiding that, the author chose an explicit, documented contract (read-time only, easy to prune once real data is seen) and asked for the assumptions to be stated plainly in code comments and SOLUTION.md, with a masked production copy as the ideal validation.
+- **Measure, don't feel.** Performance work is baselined first and shipped one change at a time with numbers ("no changing things and saying it feels faster"). The author reasoned through tools (Bullet, rack-mini-profiler, APM, local versus staging versus production) before choosing what to improve.
+- **Safe change thinking.** For Task 3 the author put it in order: stop bad data at the source first (assessor front end, a change request with a cut-over date, Ruby validation), agree a mapping with the assessors, then backfill through a new column with a kept legacy column. That gives a rollback by rename instead of a full restore, with a backup right before the rename. The assistant added dual-write, lock-timeout and verification points, and the author accepted them.
+- **Checking the assistant's work.** The author caught that the Task 3 questions had been skipped and sent the assistant back, asked it to check against the full PDF, and asked for each task's constraints to be reviewed before moving on.
+
+**Outputs of this phase**
+- 27 prompts, 18 numbered decisions (`DECISIONS.md`).
+- An approved spec with 44 requirements: 40 active, 3 out of scope, 1 dropped (`spec/`).
+- One epic and 12 tickets in build order (`tickets/`).
+- No application code yet.
 
 ---
 
@@ -411,3 +432,30 @@ Approve
 ## Prompt 23
 
 Write them
+
+---
+
+## Prompt 24
+
+Commit log on branch
+
+---
+
+## Prompt 25
+
+we're done with planning now, so let's add a summary in the relevant file/s
+the idea of this assessment is also to show my thinking and how I work
+makes sense?
+
+---
+
+## Prompt 26
+
+Edit summary first
+
+---
+
+## Prompt 27
+
+commit and make the pr for this.
+include all out tickets, logging files etc
