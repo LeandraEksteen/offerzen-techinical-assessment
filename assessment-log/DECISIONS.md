@@ -104,3 +104,8 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **The two filters live in one place:** `Assessment.matching` is used by both the dashboard and the export, so they cannot disagree.
 - **Page-1 snapshots** (without emails) are kept so each later change can prove the page still shows the same rows (Req 27).
 
+## D-023: Dashboard pagination (TKT-5)
+- **Offset pagination, hand-rolled, no gem:** 50 rows per page; fetch one extra row to know whether a next page exists, so there is no total count (a count over a large company costs a full scan). Page numbers keep Req 23's wording; keyset pagination (a cursor of date and id) would be cheaper for deep pages but cannot express "page 3".
+- **Page values:** anything that is not a whole number from 1 to 1,000,000 shows page 1 (also keeps the offset inside PostgreSQL's range); a page past the last shows an empty page with a message and a way back, status 200. Previous and Next carry only the date and status filters.
+- **Result:** the largest company's first page went from 58 s to 61 ms (199,064 queries to 53, 37 MB to 12 KB) and page 1 is identical to the baseline snapshots. The deep page (3,000) takes 183 ms: without an index the database still scans and sorts the whole company. That is TKT-7's job.
+

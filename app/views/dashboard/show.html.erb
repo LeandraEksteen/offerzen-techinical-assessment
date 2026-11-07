@@ -26,6 +26,13 @@
 <% end %>
 
 <% if @assessments %>
+  <% if @assessments.any? %>
+    <p>Rows <%= (@page - 1) * DashboardController::PAGE_SIZE + 1 %> to <%= (@page - 1) * DashboardController::PAGE_SIZE + @assessments.size %></p>
+  <% elsif @page > 1 %>
+    <p>No assessments on this page.</p>
+  <% else %>
+    <p>No assessments.</p>
+  <% end %>
   <table>
     <thead>
       <tr>
@@ -48,4 +55,17 @@
       <% end %>
     </tbody>
   </table>
+
+  <nav aria-label="Pages">
+    Page <%= @page %>
+    <% if @page > 1 %>
+      <%= link_to "Previous", dashboard_page_path(@page - 1) %>
+    <% end %>
+    <% if @page > 2 || (@page > 1 && @assessments.empty?) %>
+      <%= link_to "First page", dashboard_page_path(1) %>
+    <% end %>
+    <% if @has_next %>
+      <%= link_to "Next", dashboard_page_path(@page + 1) %>
+    <% end %>
+  </nav>
 <% end %>

@@ -70,10 +70,39 @@ One employee lookup (what the N+1 repeats per row) is a primary-key index scan t
 | Change | Ticket | Normal user (ms) | Company 02 all (ms) | Company 01 all (ms) | Queries (normal user) | Notes |
 |---|---|---|---|---|---|---|
 | Baseline | TKT-4 | 421 | 3,921 | 58,019 | 1,414 | this file |
-| Pagination | TKT-5 | | | | | |
+| Pagination (page 1) | TKT-5 | 66 | 60 | 61 | 53 | page 1 of each scenario; HTML 12 KB; deep page 183 ms (below) |
 | Eager loading | TKT-6 | | | | | |
 | Composite index | TKT-7 | | | | | |
 | Score reader | TKT-8 | | | | | |
+
+## After pagination (TKT-5, 2026-11-07)
+
+Same machine, same conditions, same method (median of 5 after a warm-up). Pagination shows 50 rows per page; "page 1" is what a user sees first.
+
+| Scenario | Rows | SQL queries run | Query-cache hits | Median ms (min-max) | HTML size |
+|---|---|---|---|---|---|
+| Company 02, assessment dates in 2024, page 1 | 50 | 53 | 0 | 66 (62-71) | 12 KB |
+| Company 02, all rows, page 1 | 50 | 52 | 1 | 60 (58-64) | 12 KB |
+| Company 01 (largest), all rows, page 1 | 50 | 53 | 0 | 61 (58-63) | 12 KB |
+| Company 01 (largest), page 3,000 (offset 149,950) | 50 | 53 | 0 | 183 (174-192) | 12 KB |
+
+| Scenario | Before | After (page 1) | Change |
+|---|---|---|---|
+| Normal user (Company 02, 2024): time | 421 ms | 66 ms | 6.4 times faster |
+| Normal user: SQL queries | 1,414 | 53 | 27 times fewer |
+| Company 02, all rows: time | 3,921 ms | 60 ms | 65 times faster |
+| Company 02, all rows: SQL queries | 14,787 | 52 | 284 times fewer |
+| Company 01 (largest): time | 58,019 ms | 61 ms | 950 times faster |
+| Company 01: SQL queries | 199,064 | 53 | 3,756 times fewer |
+| Company 01: page size | 37,287 KB | 12 KB | 3,100 times smaller |
+
+Load test (`ab`, same normal-user page, 20 requests): concurrency 1: 2.44 to 15.40 requests per second (mean 410 ms to 65 ms); concurrency 3: 2.98 to 29.26 requests per second (mean 1,006 ms to 102 ms). A longer run (200 requests at concurrency 3): 28.20 requests per second, mean 106 ms, no failures.
+
+EXPLAIN of the main query: page 1 is now a top-N heapsort (memory 102 kB) over a parallel sequential scan, 39.6 ms. A deep page (page 3,000) needs an external merge sort on disk (about 100 MB of temporary files), 146 ms in the database and 183 ms for the page. So pages deep in the list cost about three times a first page. That is the cost of offset pagination without an index; TKT-7's index is the planned fix and will be measured the same way.
+
+What is left: each page still runs about 50 employee queries (the N+1, TKT-6), and the database still scans and sorts the whole company to find the first 50 rows (TKT-7).
+
+**Page 1 is unchanged (Req 27):** `dashboard:snapshot` for both views (the largest company with no filters, and with the 2024 filter) is byte-for-byte identical to the committed baseline snapshots (sha256 `92cb8fea...` and `acd21db3...`).
 
 ## Page-1 snapshots (Req 27)
 

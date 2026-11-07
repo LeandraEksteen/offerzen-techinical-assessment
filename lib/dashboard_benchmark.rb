@@ -1,7 +1,7 @@
 # Repeatable dashboard benchmark. Each scenario signs in as a seeded admin and
 # requests the dashboard: one warm-up, then the median of several runs.
 # Prints a markdown table. A scenario that exceeds its time limit is reported as
-# "did not finish", which is a valid baseline for an unpaginated page.
+# "did not finish" (a valid baseline for a page that is too slow to finish).
 #
 #   bin/rails benchmark:dashboard                (all scenarios)
 #   SCENARIOS=normal,company2 RUNS=3 bin/rails benchmark:dashboard
@@ -13,12 +13,14 @@ class DashboardBenchmark
 
   def self.scenarios(runs: 5, big_limit: 600)
     [
-      Scenario.new(key: "normal", label: "Company 02, assessment dates in 2024", admin_email: "admin2@company-2.example.test",
+      Scenario.new(key: "normal", label: "Company 02, assessment dates in 2024, page 1", admin_email: "admin2@company-2.example.test",
                    path: "/dashboard?from=2024-01-01&to=2024-12-31", runs: runs, limit_seconds: 120),
-      Scenario.new(key: "company2", label: "Company 02, all rows", admin_email: "admin2@company-2.example.test",
+      Scenario.new(key: "company2", label: "Company 02, all rows, page 1", admin_email: "admin2@company-2.example.test",
                    path: "/dashboard", runs: runs, limit_seconds: 300),
-      Scenario.new(key: "big", label: "Company 01 (largest), all rows", admin_email: "admin1@company-1.example.test",
-                   path: "/dashboard", runs: 1, limit_seconds: big_limit)
+      Scenario.new(key: "big", label: "Company 01 (largest), all rows, page 1", admin_email: "admin1@company-1.example.test",
+                   path: "/dashboard", runs: runs, limit_seconds: big_limit),
+      Scenario.new(key: "deep", label: "Company 01 (largest), page 3,000 (offset 149,950)", admin_email: "admin1@company-1.example.test",
+                   path: "/dashboard?page=3000", runs: runs, limit_seconds: big_limit)
     ]
   end
 
