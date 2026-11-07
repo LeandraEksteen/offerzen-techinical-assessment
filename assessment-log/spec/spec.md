@@ -50,7 +50,7 @@ Where several requirements decide one outcome: Req 15 (contract) decides what a 
 | 32 | Legacy column kept written; backup before the rename; restore is last resort | Rollback steps in SOLUTION.md | user, 2026-11-07 | user |
 | 33 | Read-only status report (value, count, latest updated_at, mapped counts) | No write path for historical rows | user, 2026-11-07 | brief |
 | 34 | Step-by-step Heroku-style release and rollback plan | Steps labelled live-safe or window, each with rollback | user, 2026-11-07 | brief |
-| 35 | README, SOLUTION.md, demo outline | Fresh clone runs | user, 2026-11-07 | brief |
+| 35 | README, SOLUTION.md, demo outline (the outline is for the author's own use and is not committed: user, 2026-11-07) | Fresh clone runs | user, 2026-11-07 | brief |
 | 36 | Minimal TypeScript | `yarn typecheck` passes | user, 2026-11-07 | brief |
 | 37 | Email of CSV out of scope | No mail code | user, 2026-11-07 | user |
 | 38 | No insecure legacy export | Documented only | user, 2026-11-07 | user |

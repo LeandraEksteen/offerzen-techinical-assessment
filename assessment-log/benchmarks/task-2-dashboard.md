@@ -224,5 +224,5 @@ Staging, production and APM (Datadog or similar). In a real environment the same
 
 ## Task 3 numbers (TKT-11)
 
-The status report and the backfill rehearsal numbers are in `assessment-log/solution-drafts/status-backfill.md` and `assessment-log/benchmarks/status-report-500k-seed.txt` (report output on the 500k seed, 4.7 s).
+The status report and the backfill rehearsal numbers are in SOLUTION.md (Task 3) and `assessment-log/benchmarks/status-report-500k-seed.txt` (report output on the 500k seed, 4.7 s).
 

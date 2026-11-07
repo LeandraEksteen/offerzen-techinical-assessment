@@ -2,7 +2,7 @@
 key: TKT-1
 type: Task
 title: Scaffold: data model, admin sign-in, large messy seed data
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T08:46:11Z
 ---

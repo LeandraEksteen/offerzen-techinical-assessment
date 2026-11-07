@@ -2,7 +2,7 @@
 key: TKT-7
 type: Task
 title: Task 2: composite index for the dashboard and export date filter
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T10:23:37Z
 ---

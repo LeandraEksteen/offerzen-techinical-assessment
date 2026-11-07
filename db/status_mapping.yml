@@ -1,6 +1,6 @@
 # DRAFT mapping of stored legacy statuses to the five canonical ones. It is a starting
 # guess by the author, NOT approved: assessors must confirm the doubtful values first
-# (see assessment-log/solution-drafts/status-backfill.md). Nothing in this repository
+# (see SOLUTION.md, "Task 3"). Nothing in this repository
 # applies it; `bin/rails statuses:report` only shows what it would do.
 #
 # Keys are the stored value trimmed and lower-cased ("Complete " and "COMPLETE" are the

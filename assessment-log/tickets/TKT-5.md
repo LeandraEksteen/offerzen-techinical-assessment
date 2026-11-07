@@ -2,7 +2,7 @@
 key: TKT-5
 type: Task
 title: Task 2: dashboard pagination
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T10:02:22Z
 ---

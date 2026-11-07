@@ -1,0 +1,51 @@
+schema_version: 1
+key: TKT-12
+title: "Docs: README, final SOLUTION.md, benchmarks, demo outline"
+jira: assessment-log/tickets/TKT-12.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-12 | Docs: README, final SOLUTION.md, benchmarks, demo outline"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: docs/TKT-12/readme-solution-demo
+    stack: rails
+    implements: []
+    role: none
+    requirements: [11, 18, 26, 35]
+    scope:
+      - README.md
+      - SOLUTION.md
+      - test/docs/
+      - assessment-log/
+    changes: |
+      README.md: what the app is, prerequisites, starting Postgres and PGPORT (database.yml defaults to 5433),
+      setup, seeding (small and the 500k dataset), running the app and the job worker, signing in (seeded
+      admins; the password is named by its constant and env var, never printed), running the tests and the
+      CI checks, the useful rake tasks, and where the log lives. SOLUTION.md: design and trade-offs for the
+      three tasks assembled from the decisions, plans, benchmarks and the two drafts: the async choice,
+      tenant isolation, PII scrubbing, the legacy-export controls (Req 38), storage (Req 11), the score
+      assumptions (Req 18), the dashboard before and after tables with query counts (Req 26), the status rule
+      and the backfill plan, testing and CI, limitations, and a Future work section (Req 39). A demo outline
+      written for the author's own use and not committed. The PROMPTS.md summary refreshed to cover the build. A small docs
+      test guards against doc rot. Ticket statuses updated. No application code changes.
+    stubs: none
+    tests:
+      - "UT-1 [positive] every relative markdown link in README.md, SOLUTION.md and assessment-log/*.md resolves to a file"
+      - "UT-2 [positive] every `bin/rails <task>` named in README.md and SOLUTION.md is a real rake task"
+      - "UT-3 [positive] SOLUTION.md has the required sections: async choice, score assumptions, benchmarks, Task 3 plan, legacy export, storage, Future work"
+      - "UT-4 [negative] Future work names polling, a global done-banner, status-based score gating or alerts, and staging or production measurement, and nothing in it exists in the code"
+      - "UT-5 [edge] README.md names PGPORT, the seeding task, the job worker and how to sign in, and never contains the seeded password"
+    test_command: >-
+      bin/rails test test/docs
+    lint_command: bin/rubocop
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Documentation only; nothing to deploy.
+manual_checks:
+  - "MC-1 [manual] fresh clone in a scratch folder with a throwaway database (DATABASE_URL): follow the README literally to a running app, a seeded database, a signed-in dashboard and a finished export; every step works as written"
+  - "MC-2 [manual] claims audit: every performance, size or time claim in SOLUTION.md and README.md has a number and a source row in the benchmarks file or a decision; the list is kept in state/claims-audit.md"
+  - "MC-3 [manual] read SOLUTION.md against Req 11, 18, 26, 35, 38 and 39 and the demo outline against the ticket's coverage list (architecture, key decisions, trade-offs, interesting implementations)"
+conflict_risks: []
