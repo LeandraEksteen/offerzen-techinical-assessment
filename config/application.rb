@@ -6,6 +6,10 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# Shared PII scrubbing. Plain Ruby, required here because the logger is built
+# before autoloading is available; excluded from autoload_lib below.
+require_relative "../lib/pii"
+
 module OfferzenTechinicalAssessment
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
@@ -14,7 +18,11 @@ module OfferzenTechinicalAssessment
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_lib(ignore: %w[assets tasks pii pii.rb])
+
+    # Every log line, including error logs, passes through the PII scrubber.
+    # production.rb builds its own logger, so it passes this formatter too.
+    config.log_formatter = Pii::LogFormatter.new
 
     # Configuration for the application, engines, and railties goes here.
     #

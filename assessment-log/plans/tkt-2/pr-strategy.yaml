@@ -1,0 +1,55 @@
+schema_version: 1
+key: TKT-2
+title: "PII scrubber service and log hygiene base"
+jira: assessment-log/tickets/TKT-2.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-2 | PII scrubber service and log hygiene base"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-2/pii-scrubber-log-hygiene
+    stack: rails
+    implements: []
+    role: none
+    requirements: [12, 13]
+    scope:
+      - config/application.rb
+      - config/environments/production.rb
+      - config/initializers/
+      - lib/pii.rb
+      - lib/pii/
+      - app/models/
+      - app/jobs/
+      - test/
+      - assessment-log/
+    changes: |
+      Add a small Pii module (registry, scrubber, log formatter) and a PiiAttributes model concern.
+      Models declare their PII attributes once; the declaration feeds the parameter filter and
+      inspect output. A log formatter scrubs every log and error-log line in all environments.
+      ApplicationJob rejects non-id arguments and stops logging arguments. Test helper to capture
+      logs and assert no leaked values.
+    stubs: none
+    tests:
+      - UT-1 [positive] declarations register PII attributes for Assessment, Employee and Admin
+      - UT-2 [positive] declared attributes are added to the request parameter filter and logged as filtered
+      - UT-3 [positive] inspect redacts declared attributes and still shows the id
+      - UT-4 [positive] scrub_text redacts email addresses
+      - UT-5 [positive] scrub_text redacts declared attribute values in hash, JSON, key-colon, SQL equals and bind-array shapes, including nested JSON blobs
+      - UT-6 [edge] scrub_text leaves ordinary text alone and never raises or hangs on nil, non-strings or unbalanced brackets
+      - UT-7 [positive] scrub_attributes replaces declared PII attributes with a marker and keeps the rest
+      - UT-8 [positive] the log formatter scrubs a normal line and an error line carrying an email, in every environment's logger
+      - UT-9 [positive] signing in and loading the home page leaves neither the email nor the password in the captured log
+      - UT-10 [negative] a job given a string, hash or email argument fails to enqueue; ids and records are accepted; arguments are not logged
+      - UT-11 [edge] a query with bind values on declared columns does not log the values
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Production logger wiring changes (config/environments/production.rb); not deployed anywhere in this exercise.
+manual_checks:
+  - "MC-1 [manual] local: run the server, sign in and load pages, then grep log/development.log for the admin email, the password and seeded response text: expect none"
+  - "MC-2 [manual] local: confirm the production logger uses the scrubbing formatter, for example boot with RAILS_ENV=production and dummy secrets and print the formatter class"
+conflict_risks: []

@@ -1,6 +1,10 @@
 class Assessment < ApplicationRecord
+  include PiiAttributes
+
   belongs_to :company
   belongs_to :employee
+
+  pii_attributes :employee_email, :responses_json
 
   # status and responses_json are deliberately unvalidated here: they hold ten
   # years of inconsistent legacy values. Later tickets add status rules and the

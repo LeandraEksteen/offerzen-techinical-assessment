@@ -2,9 +2,9 @@
 key: TKT-2
 type: Task
 title: PII scrubber service and log hygiene base
-status: To Do
+status: In Review
 parent: EPIC-1
-updated: 2026-11-07T08:28:15Z
+updated: 2026-11-07T08:59:43Z
 ---
 
 ## Description
@@ -32,3 +32,4 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: `lib/pii/` (registry, scrubber, log formatter), `PiiAttributes` concern declared on Assessment, Employee and Admin, formatter wired for all environments including production (which builds its own logger), `ApplicationJob` accepts only ids or records and no longer logs arguments, `capture_log` and `assert_log_clean` test helpers. Checks: `bin/rails test` 49 runs, 209 assertions, 0 failures; `bin/rubocop`, `bin/brakeman`, `bin/bundler-audit`, `yarn typecheck` clean. MC-1: real dev server, wrong and right sign-in plus a request carrying `responses_json` and `name` parameters left no email, password or parameter value in the new log lines. MC-2: a production boot (dummy secret) uses `Pii::LogFormatter`, and a logged email and a logged `responses_json` value both came out filtered. Notes: Rails prints filtered parameter values unquoted (`[FILTERED]`), so tests assert that form; Req 13's export and dashboard flows are still to be checked in TKT-3 and TKT-8.
