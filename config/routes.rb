@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   resource :session, only: %i[ new create destroy ]
   resources :exports, only: %i[ index create show ]
+  resources :assessments, only: %i[ edit update ]
   resource :dashboard, only: :show, controller: "dashboard"
 
   root "home#show"

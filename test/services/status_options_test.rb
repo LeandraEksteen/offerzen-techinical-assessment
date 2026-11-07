@@ -20,6 +20,18 @@ class StatusOptionsTest < ActiveSupport::TestCase
     assert_equal [ [ "complete", "complete" ], [ "n/a", "n/a" ], [ "pending", "pending" ], [ "(no status)", "__none__" ] ], entries
   end
 
+  # TKT-9 UT-8
+  test "forget makes a status saved after the list was cached show up at once" do
+    assessment = create_assessment(company: @company, status: "pending")
+    assert_equal [ [ "pending", "pending" ] ], StatusOptions.new(@company).entries
+
+    assessment.update!(status: "Brand New")
+    assert_equal [ [ "pending", "pending" ] ], StatusOptions.new(@company).entries
+
+    StatusOptions.forget(@company)
+    assert_equal [ [ "brand new", "brand new" ] ], StatusOptions.new(@company).entries
+  end
+
   test "omits no-status when the company has none" do
     create_assessment(company: @company, status: "pending")
 

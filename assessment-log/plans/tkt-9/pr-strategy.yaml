@@ -1,0 +1,54 @@
+schema_version: 1
+key: TKT-9
+title: "Task 3: assessor status screen, free-text baseline"
+jira: assessment-log/tickets/TKT-9.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-9 | Task 3: assessor status screen, free-text baseline"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-9/status-screen
+    stack: rails
+    implements: []
+    role: none
+    requirements: [41]
+    scope:
+      - app/controllers/assessments_controller.rb
+      - app/views/assessments/
+      - app/views/dashboard/show.html.erb
+      - app/services/status_options.rb
+      - config/routes.rb
+      - test/
+      - assessment-log/
+    changes: |
+      Add a small edit form for one assessment's status as free text, for signed-in admins of its company only
+      (existing sign-in, no new role): GET assessments/:id/edit and PATCH assessments/:id, looked up through the
+      signed-in admin's own company so another company's id is a 404. The baseline stores whatever is typed,
+      exactly as typed (that is the legacy behaviour TKT-10 replaces). Only id, date and status are loaded and
+      shown; no employee email, no responses_json. A saved status forgets the company's cached status-filter
+      list. The dashboard gets an "Edit status" link per row.
+    stubs: none
+    tests:
+      - UT-1 [positive] an admin opens the form for their own company's assessment and sees a free-text field with the current status
+      - UT-2 [positive] saving stores any text exactly as typed (a legacy spelling, an unknown word, surrounding spaces)
+      - UT-3 [edge] an empty or blank value is stored as typed (no validation in the baseline)
+      - "UT-4 [negative] another company's assessment: edit and update both return 404 and the status is unchanged"
+      - "UT-5 [negative] signed out: edit and update redirect to sign-in and change nothing"
+      - UT-6 [edge] saving changes only status and updated_at; date, employee and responses_json are unchanged
+      - UT-7 [edge] an unknown id returns 404
+      - UT-8 [positive] after a save the dashboard's status filter lists the new value at once (cache forgotten)
+      - UT-9 [edge] the form page does not contain the employee's email, the query does not read responses_json, and the request log has no employee email
+      - UT-10 [positive] every dashboard row links to its edit form and the dashboard query count is unchanged
+    test_command: >-
+      bin/rails test test/controllers/assessments_controller_test.rb test/controllers/dashboard_controller_test.rb test/services/status_options_test.rb
+    lint_command: bin/rubocop
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: No migration, no config. Safe to deploy at any time. The free-text form is the deliberate "before" half of Req 41; TKT-10 replaces it with the validated dropdown.
+manual_checks:
+  - MC-1 [manual] local dev server: sign in as an admin, open Dashboard, click "Edit status" on a row, save a free-text value, see it on the dashboard and in the status filter list
+  - MC-2 [manual] local dev server: with the second company's admin, open another company's assessment URL and get a 404; screenshots of the form (before) for the PR
+conflict_risks: []

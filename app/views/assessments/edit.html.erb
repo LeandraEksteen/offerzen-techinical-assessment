@@ -1,0 +1,13 @@
+<h1>Edit status</h1>
+<p><%= link_to "Back to dashboard", dashboard_path %></p>
+
+<p>Assessment <%= @assessment.id %>, dated <%= @assessment.assessment_date %>.</p>
+
+<%= form_with model: @assessment, url: assessment_path(@assessment), method: :patch do |form| %>
+  <p>
+    <%= form.label :status, "Status" %>
+    <%= form.text_field :status %>
+  </p>
+  <%= form.submit "Save" %>
+  <%= link_to "Cancel", dashboard_path %>
+<% end %>

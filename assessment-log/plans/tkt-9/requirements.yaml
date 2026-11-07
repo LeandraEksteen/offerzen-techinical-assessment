@@ -1,0 +1,25 @@
+---
+schema_version: 1
+key: TKT-9
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 41
+  summary: A small assessor input screen shows the move from free-text status to a
+    validated dropdown
+  category: functional
+  source: user:2026-11-07
+  source_text: we can create a small assessor side input screen to show the before
+    (freetext) to the after (dropdown with validation)
+  acceptance: One form edits an assessment's status for signed-in admins of its company
+    (existing sign-in, no new role); the baseline version offers a free-text field;
+    the later version offers a dropdown of the five values that cannot be saved empty,
+    with server-side validation from Req 29; both versions are visible in git history.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-C, T3-F accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition
+  - permissions

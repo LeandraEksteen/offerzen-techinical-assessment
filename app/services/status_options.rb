@@ -32,6 +32,15 @@ class StatusOptions
     allows?(read, value)
   end
 
+  # Forget a company's cached list, so a status saved just now shows in the filter at once.
+  def self.forget(company)
+    Rails.cache.delete(cache_key(company))
+  end
+
+  def self.cache_key(company)
+    "status_options/v1/company/#{company.id}"
+  end
+
   # SQL condition (and bind) selecting the rows a submitted value stands for.
   def self.condition(value)
     value == NONE ? "#{NORMALISED_SQL} IS NULL" : [ "#{NORMALISED_SQL} = ?", value ]
@@ -44,7 +53,7 @@ class StatusOptions
   end
 
   def cached
-    Rails.cache.fetch("status_options/v1/company/#{@company.id}", expires_in: CACHE_TTL) { read }
+    Rails.cache.fetch(self.class.cache_key(@company), expires_in: CACHE_TTL) { read }
   end
 
   def read
