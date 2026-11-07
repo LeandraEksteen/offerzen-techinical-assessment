@@ -136,15 +136,18 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # UT-8
-  test "the baseline reads each employee separately, so queries grow with the rows" do
+  # UT-1 (TKT-6): replaces the baseline test that asserted one query per row.
+  test "the query count does not grow with the number of rows" do
     sign_in_as @admin
-    3.times { add_assessment }
-    few = count_queries { get dashboard_url }
-    3.times { add_assessment }
-    many = count_queries { get dashboard_url }
+    counts = {}
+    [ 3, 20, 50 ].each do |rows|
+      Assessment.where(company: @company).delete_all
+      add_assessments(rows)
+      counts[rows] = count_queries { get dashboard_url }
+      assert_equal rows, table_rows.size
+    end
 
-    assert_operator many - few, :>=, 3, "baseline should do one extra query per extra row (an N+1), got #{few} then #{many}"
+    assert_equal 1, counts.values.uniq.size, "queries per page should be constant, got #{counts}"
   end
 
   # UT-9
@@ -295,16 +298,69 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected, table_rows.map { |row| row[1] }
   end
 
-  # UT-9
-  test "the SQL query count for a page is bounded by the page size, not the number of rows" do
+  # UT-2 (TKT-6)
+  test "a page of 50 rows runs at most 8 SQL queries" do
     add_assessments(120)
     sign_in_as @admin
 
     queries = count_queries { get dashboard_url }
 
-    # 50 employee lookups (the N+1 TKT-6 removes) plus a handful of fixed queries.
-    assert_operator queries, :<=, 50 + 12, "page 1 ran #{queries} queries"
-    assert_operator queries, :>=, 50
+    assert_operator queries, :<=, 8, "page 1 ran #{queries} queries"
+  end
+
+  # UT-3 (TKT-6)
+  test "the employee query selects only id and email" do
+    add_assessments(5)
+    sign_in_as @admin
+    employee_sql = []
+    subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+      employee_sql << payload[:sql] if payload[:sql].include?('FROM "employees"')
+    end
+
+    get dashboard_url
+    ActiveSupport::Notifications.unsubscribe(subscriber)
+
+    assert_equal 1, employee_sql.size, "expected one employees query, got #{employee_sql.size}"
+    assert_match(/SELECT "employees"\."id", "employees"\."email" FROM "employees"/, employee_sql.first)
+    assert_no_match(/"employees"\."name"/, employee_sql.first)
+  end
+
+  test "employees loaded for the list carry no attribute beyond id and email" do
+    assessment = add_assessment
+    loaded = Assessment.where(id: assessment.id).preload(:employee_for_listing).first.employee_for_listing
+
+    assert_equal [ "email", "id" ], loaded.attributes.keys.sort
+  end
+
+  # UT-6 (TKT-6)
+  test "reading an employee attribute that was not loaded raises instead of running another query" do
+    assessment = add_assessment
+    loaded = Assessment.where(id: assessment.id).preload(:employee_for_listing).first.employee_for_listing
+
+    assert_raises(ActiveModel::MissingAttributeError) { loaded.name }
+  end
+
+  # UT-4 (TKT-6)
+  test "the page shows the same emails, rows and order as reading each employee separately" do
+    add_assessments(30).each_with_index { |a, i| a.update_columns(assessment_date: Date.new(2025, 1, 1) + (i % 4)) }
+    sign_in_as @admin
+
+    get dashboard_url
+
+    expected = @company.assessments.order(assessment_date: :desc, id: :desc).limit(50).map { |a| [ a.employee.email, a.employee_id.to_s ] }
+    assert_equal expected, table_rows.map { |row| [ row[0], row[1] ] }
+  end
+
+  # UT-5 (TKT-6)
+  test "several assessments sharing one employee each show that employee's email" do
+    employee = @company.employees.create!(name: "Shared Person", email: "shared.person@example.test")
+    3.times { |n| Assessment.create!(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n) }
+    other = add_assessment(assessment_date: "2025-06-01")
+    sign_in_as @admin
+
+    get dashboard_url
+
+    assert_equal [ other.employee.email ] + Array.new(3, "shared.person@example.test"), table_rows.map { |row| row[0] }
   end
 
   # UT-10

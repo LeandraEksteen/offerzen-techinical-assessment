@@ -1,0 +1,50 @@
+schema_version: 1
+key: TKT-6
+title: "Task 2: eager loading on the dashboard"
+jira: assessment-log/tickets/TKT-6.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-6 | Task 2: eager loading on the dashboard"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-6/dashboard-eager-loading
+    stack: rails
+    implements: []
+    role: none
+    requirements: [24, 26, 27]
+    scope:
+      - app/models/assessment.rb
+      - app/controllers/dashboard_controller.rb
+      - app/views/dashboard/
+      - test/
+      - assessment-log/
+    changes: |
+      Remove the per-row employee query: preload the page's employees in one extra query, through a
+      column-limited association that loads only the employee id and email (all the page reads). The
+      page then runs a constant number of queries however many rows it shows. Replace the baseline
+      characterisation test (query count grows with rows) with one that proves it is constant.
+      Measure with the same benchmark task, check Bullet is silent, and prove page 1 is unchanged.
+    stubs: none
+    tests:
+      - "UT-1 [positive] the query count is the same for pages of 3, 20 and 50 rows"
+      - "UT-2 [positive] page 1 of 120 rows runs at most 8 SQL queries"
+      - "UT-3 [positive] the employee query selects only id and email, and the loaded employees have no other attribute"
+      - "UT-4 [positive] the page shows the same emails, rows and order as reading each employee separately would"
+      - "UT-5 [edge] several assessments sharing one employee each show that employee's email"
+      - "UT-6 [edge] reading an employee attribute that was not loaded raises instead of silently running another query"
+      - "UT-7 [positive] filters, paging and the empty and invalid-filter pages still behave (existing dashboard tests pass unchanged)"
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Not deployed anywhere in this exercise; merging to main only. The change is revertible on its own.
+manual_checks:
+  - "MC-1 [manual] local: run the benchmark after the change and append the row to the benchmarks table"
+  - "MC-2 [manual] local: with Bullet on, load page 1, a middle page, a filtered page and the last page of the largest company: log/bullet.log stays empty (no N+1, no unused eager loading)"
+  - "MC-3 [manual] local: diff dashboard:snapshot for both views against the committed baseline snapshots: no differences"
+  - "MC-4 [manual] local: confirm in the development log that a page runs one assessments query and one employees query selecting only id and email"
+  - "MC-5 [manual] local: repeat the ab load test on the normal-user page and record the change"
+conflict_risks: []
