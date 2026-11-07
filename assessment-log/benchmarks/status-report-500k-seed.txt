@@ -1,0 +1,25 @@
+Status report: 500000 assessments, 14 distinct stored values (read only; nothing is written)
+
+Rows | Latest updated_at | Stored value | Maps to | Review
+89416 | 2026-11-07 09:46 | "in_progress" | in_progress | 
+89371 | 2026-11-07 09:46 | "pending" | pending | 
+59413 | 2026-11-07 11:33 | "archived" | archived | 
+59360 | 2026-11-07 09:46 | "complete" | completed | 
+47345 | 2026-11-07 09:46 | "needs_follow_up" | needs_follow_up | 
+29701 | 2026-11-07 09:46 | "done" | completed | 
+29636 | 2026-11-07 09:46 | "comp" | completed | 
+18062 | 2026-11-07 09:46 | (empty) | (unmapped) | 
+17896 | 2026-11-07 09:46 | (NULL) | (unmapped) | 
+17869 | 2026-11-07 09:46 | "Complete " | completed | 
+12120 | 2026-11-07 09:46 | "Done" | completed | 
+12015 | 2026-11-07 09:46 | "COMPLETE" | completed | 
+11937 | 2026-11-07 09:46 | "n/a" | (unmapped) | 
+5859 | 2026-11-07 09:46 | (blank only, 1 character) | (unmapped) | 
+
+Mapping: db/status_mapping.yml version 0 (DRAFT, not approved)
+  pending                89371 rows
+  in_progress            89416 rows
+  completed             160701 rows
+  needs_follow_up        47345 rows
+  archived               59413 rows
+  unmapped               53754 rows in 4 distinct values (these stay NULL and block the switch)

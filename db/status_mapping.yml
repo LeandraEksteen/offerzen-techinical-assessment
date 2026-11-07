@@ -1,0 +1,32 @@
+# DRAFT mapping of stored legacy statuses to the five canonical ones. It is a starting
+# guess by the author, NOT approved: assessors must confirm the doubtful values first
+# (see assessment-log/solution-drafts/status-backfill.md). Nothing in this repository
+# applies it; `bin/rails statuses:report` only shows what it would do.
+#
+# Keys are the stored value trimmed and lower-cased ("Complete " and "COMPLETE" are the
+# key "complete"). "__none__" would stand for NULL, empty and blank-only values.
+# A value with no entry is unmapped: it would stay NULL in the new column and block the
+# switch. When assessors approve, set approved: true and fill approved_by and
+# approved_on, and raise version.
+version: 0
+approved: false
+approved_by:
+approved_on:
+
+mapping:
+  "pending": pending
+  "in_progress": in_progress
+  "in progress": in_progress
+  "needs_follow_up": needs_follow_up
+  "needs follow up": needs_follow_up
+  "follow up": needs_follow_up
+  "completed": completed
+  "complete": completed
+  "comp": completed
+  "done": completed
+  "finished": completed
+  "archived": archived
+  "archive": archived
+
+# Deliberately NOT mapped, assessors decide: NULL, empty and blank-only values
+# ("__none__") and "n/a". They need an approved target too, or they block the switch.
