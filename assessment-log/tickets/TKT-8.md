@@ -2,7 +2,7 @@
 key: TKT-8
 type: Task
 title: Task 2: score reader, shared by dashboard and export, plus score report
-status: To Do
+status: In Review
 parent: EPIC-1
 updated: 2026-11-07T08:28:15Z
 ---
@@ -38,3 +38,5 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: `ScoreReader` (contract in its header comment, rules as removable units, never raises), `Assessment.with_score_candidates` and `#score_outcome`, `DashboardHelper#displayed_score` ("Score not available", per-row rescue logging only the error class), the CSV export reading the same reader (blank when no score), and `scores:report` (`ScoreReport`, read-only, tokens printed only if numeric or a placeholder word). Candidates are read in SQL so free text never reaches Ruby. Tests: reader table and rule-removal tests, dashboard/export agreement for every seeded shape, read-only check, log hygiene, report tests; 152 runs, 0 failures; rubocop, brakeman and bundler-audit clean.
+- 2026-11-07 measurements (`assessment-log/benchmarks/task-2-dashboard.md`, "After the score reader"): page 1 unchanged at 6-7 ms and 4 queries; 200,000-row export median 2,552 ms (was 3,767); page-1 snapshots differ from baseline only in the score column (19 and 16 of 50 rows); Bullet log empty; report on 500k seed: 81.0% shown with a score, 10.5% missing, 3.2% proportions rejected, 5.3% other invalid.

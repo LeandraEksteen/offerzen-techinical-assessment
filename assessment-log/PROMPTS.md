@@ -1,6 +1,6 @@
 # Prompts
 
-Verbatim, in order. 54 prompts so far, covering the planning phase. The summary below is for the planning phase and is extended when the build is done.
+Verbatim, in order. 57 prompts so far, covering the planning phase. The summary below is for the planning phase and is extended when the build is done.
 
 ## Summary: how the planning went
 
@@ -18,7 +18,7 @@ Verbatim, in order. 54 prompts so far, covering the planning phase. The summary 
 - **Checking the assistant's work.** The author caught that the Task 3 questions had been skipped and sent the assistant back, asked it to check against the full PDF, and asked for each task's constraints to be reviewed before moving on.
 
 **Outputs of this phase**
-- 54 prompts, 25 numbered decisions (`DECISIONS.md`).
+- 57 prompts, 26 numbered decisions (`DECISIONS.md`).
 - An approved spec with 44 requirements: 40 active, 3 out of scope, 1 dropped (`spec/`).
 - One epic and 12 tickets in build order (`tickets/`).
 - No application code yet.
@@ -623,5 +623,23 @@ Implement
 ---
 
 ## Prompt 54
+
+Commit and open PR
+
+---
+
+## Prompt 55
+
+merged, continue
+
+---
+
+## Prompt 56
+
+Implement
+
+---
+
+## Prompt 57
 
 Commit and open PR

@@ -1,0 +1,52 @@
+# dashboard page 1, Company 01, /dashboard?from=2024-01-01&to=2024-12-31 (employee_id | date | status | score | email hash)
+19278 | 2024-12-31 | "in_progress" | "47" | 86ec7c91
+10757 | 2024-12-31 | "done" | "53" | dacc7392
+1543 | 2024-12-31 | "comp" | "Score not available" | 68992668
+8806 | 2024-12-31 | "Complete " | "50" | 4d124caf
+2662 | 2024-12-31 | "" | "60" | f6b4c52b
+2691 | 2024-12-31 | "pending" | "47" | 76f643a7
+13071 | 2024-12-31 | "archived" | "57" | 5ff7ac0d
+3963 | 2024-12-31 | "in_progress" | "63" | 5ee39f28
+3161 | 2024-12-31 | "pending" | "73" | 51024818
+3027 | 2024-12-31 | "pending" | "54" | 171d8e37
+1721 | 2024-12-31 | "needs_follow_up" | "Score not available" | 5141c501
+12846 | 2024-12-31 | "in_progress" | "47" | bb2983c0
+924 | 2024-12-31 | "in_progress" | "53" | dc8c8555
+19920 | 2024-12-31 | "pending" | "63" | 8920b5c1
+16673 | 2024-12-31 | "Done" | "37" | 818d8216
+11354 | 2024-12-31 | "in_progress" | "50" | c1b2ffe6
+7579 | 2024-12-31 | "complete" | "67" | d96df677
+17909 | 2024-12-31 | "comp" | "60" | e90e989e
+5956 | 2024-12-31 | "pending" | "67" | 46ad46aa
+8397 | 2024-12-31 | "needs_follow_up" | "63" | 79ac278b
+4566 | 2024-12-31 | "archived" | "60" | 2d2c8b4c
+15756 | 2024-12-31 | "done" | "57" | 973443d1
+14508 | 2024-12-31 | "archived" | "47" | 20e1b6dd
+19270 | 2024-12-31 | "pending" | "57" | 37c4a973
+6171 | 2024-12-31 | "Done" | "53" | b2a01d9e
+6427 | 2024-12-31 | "needs_follow_up" | "57" | 1c8907f0
+3584 | 2024-12-31 | "archived" | "53" | c9b8fbcd
+67 | 2024-12-31 | "in_progress" | "47" | 36a1c7c3
+10211 | 2024-12-31 | "archived" | "70" | d468bb69
+5427 | 2024-12-31 | "complete" | "28" | 553850b2
+9939 | 2024-12-31 | "complete" | "53" | 02b3b56a
+12358 | 2024-12-31 | "complete" | "40" | e8a1c37e
+3563 | 2024-12-31 | "complete" | "70" | 761e62e7
+5477 | 2024-12-31 | "archived" | "50" | fffc9b02
+9723 | 2024-12-31 | "" | "57" | f012af2d
+5075 | 2024-12-31 | "done" | "Score not available" | 8146d8b1
+1090 | 2024-12-31 | "archived" | "Score not available" | 574d6505
+365 | 2024-12-31 | "in_progress" | "57" | 563f54ab
+14920 | 2024-12-31 | "archived" | "63" | 6cfbd5f4
+16394 | 2024-12-31 | "done" | "60" | eeb203ed
+6539 | 2024-12-31 | "pending" | "50" | 915e05c7
+6570 | 2024-12-31 | "" | "40" | 04903b15
+19589 | 2024-12-31 | "in_progress" | "73" | 65bdedb3
+12271 | 2024-12-31 | "done" | "63" | fcf4a52b
+11797 | 2024-12-31 | "in_progress" | "43" | c363cb8b
+2897 | 2024-12-31 | "needs_follow_up" | "Score not available" | c697eee6
+5063 | 2024-12-31 | "in_progress" | "70" | c41b3854
+18960 | 2024-12-31 | "needs_follow_up" | "53" | 8546a17c
+10598 | 2024-12-31 | "pending" | "47" | beb3e7a9
+10318 | 2024-12-31 | "in_progress" | "Score not available" | 1941bf86
+# sha256 24636c510515f9390e78db507d4ed658d2693507606ff137dd40dad114ebeb1e

@@ -37,15 +37,16 @@ class AssessmentCsvExportTest < ActiveSupport::TestCase
     assert_raises(RuntimeError) { AssessmentCsvExport.ensure_no_pii!(%w[ responses_json ]) }
   end
 
-  # UT-6
-  test "only a numeric top-level score is exported" do
+  # UT-6 (TKT-3) / UT-10 (TKT-8): the score is whatever ScoreReader reads, blank when none
+  test "the score cell is the reader's value, blank when there is no valid score" do
     shapes = [ { "score" => 85 }, { "score" => 84.5 }, { "score" => "85" }, { "score" => "85%" }, { "score" => nil },
-               { "comments" => "no score here" }, [ 85 ], { "score" => 85 }.to_json, nil, { "score" => { "nested" => 1 } } ]
+               { "comments" => "no score here" }, [ 85 ], { "score" => 85 }.to_json, nil, { "score" => { "nested" => 1 } },
+               { "score" => 0.85 }, { "score" => 150 }, { "assessment_score" => "70" } ]
     shapes.each { |json| create_assessment(company: @company, responses_json: json) }
 
     csv = export_csv(create_export(company: @company, admin: @admin))
 
-    assert_equal [ "85", "84.5", "", "", "", "", "", "", "", "" ], csv["score"].map(&:to_s)
+    assert_equal [ "85", "85", "85", "85", "", "", "", "", "", "", "", "", "70" ], csv["score"].map(&:to_s)
   end
 
   # UT-7

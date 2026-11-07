@@ -16,6 +16,19 @@ class Assessment < ApplicationRecord
   # score reader; this scaffold only guarantees the date every assessment has.
   validates :assessment_date, presence: true
 
+  # Adds the score's candidate keys (see ScoreReader) to the select, read in SQL so the
+  # free-text answers in responses_json never reach Ruby and the large column is not loaded.
+  # Combine with the columns the page needs: select(:id, ...).with_score_candidates.
+  scope :with_score_candidates, lambda {
+    select(*ScoreReader.candidate_select_sql.map { |sql| Arel.sql(sql) })
+  }
+
+  # What to show for this assessment's score. Needs the record to have been loaded
+  # with_score_candidates.
+  def score_outcome
+    ScoreReader.read(ScoreReader::KEYS.each_index.map { |index| self["score_candidate_#{index}"] })
+  end
+
   # The two filters shared by the export and the dashboard, in one place so the
   # two can never disagree: an inclusive assessment date range (either end may
   # be nil) and a status value from StatusOptions (nil means all).

@@ -1,0 +1,143 @@
+---
+schema_version: 1
+key: TKT-8
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 14
+  summary: Task 2 logging in the dashboard area reduces sensitive information written
+    to logs
+  category: operational
+  source: prd:OfferZen assignment PDF §Task 2
+  source_text: Reduce the chance of sensitive information being written to logs in
+    this area.
+  acceptance: Dashboard request logs show the filter parameter names but not employee
+    email or score values; satisfied by the same test as Req 13 run against the dashboard.
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: logging
+  risk:
+  - pii
+- id: 15
+  summary: Score contract - how the score is read from responses_json
+  category: data-contract
+  source: user:2026-11-07
+  source_text: we'll have to make an educated guess/assumption and stick with it
+  acceptance: 'A reader returns the score as an integer 0-100 or nil: it takes the
+    first valid value from the top-level keys score, assessment_score, total_score,
+    overall_score in that order and never combines them; accepts numbers and strings
+    (trimmed, trailing % stripped, a single decimal comma read as a point); ambiguous
+    text such as ''1,234'', ''N/A'' or empty is invalid; values below 0 or above 100
+    are invalid; a value strictly between 0 and 1 is NOT scaled and is invalid (counted
+    separately); rounds half up. A unit test table covers each case, including a non-hash
+    or nil responses_json.'
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (contract accepted Q-A; proportions shown as not available
+    per T2-5 and Q-G)
+  supersedes: my first proposal that scaled proportions (0.85 to 85)
+  domain: score
+  risk: []
+- id: 16
+  summary: The dashboard shows 'Score not available' when no valid score exists, and
+    status never gates the score
+  category: edge-case
+  source: user:2026-11-07
+  source_text: I would rather the user see 'score not available' than an error screen
+    cause of a nil error
+  acceptance: 'A dashboard row with an invalid or missing score renders ''Score not
+    available'' (CSV: blank) and the page returns 200; a pending and a completed row
+    with the same valid score both show it; the reader never raises - an unexpected
+    error in one row is rescued, logged with only the error class and assessment id,
+    and that row shows ''Score not available''; there is no footnote saying scores
+    are normalised.'
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes: earlier agreement to show a dash; my proposed 'may differ' footnote
+  domain: score
+  risk: []
+- id: 17
+  summary: Score normalisation is read-time only; stored data is never rewritten
+  category: business-rule
+  source: user:2026-11-07
+  source_text: The user could be seeing something different than what is in the db
+    due to our normalisation, it's an important call out
+  acceptance: No code path writes to responses_json; a test records responses_json
+    before and after loading the dashboard and running the export and report and finds
+    it unchanged.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: score
+  risk:
+  - pii
+- id: 18
+  summary: The score contract and its assumptions are documented where the next developer
+    will see them
+  category: operational
+  source: user:2026-11-07
+  source_text: So ensure this approach is summarised as comments in the code for the
+    next dev to see.
+  acceptance: The score reader file begins with a comment block stating the key order,
+    parsing rules, range rule and limitations; SOLUTION.md has a section stating plainly
+    that the data shape is unknown, listing each assumption and the known legacy issues
+    covered, noting that displayed scores can differ from stored data, and naming
+    a masked production copy as the ideal validation.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: score
+  risk: []
+- id: 19
+  summary: A read-only score report shows counts and a few examples per normalisation
+    case
+  category: functional
+  source: user:2026-11-07
+  source_text: we just want a few per normalisation case to eyeball accuracy
+  acceptance: A rake task scans assessments in batches without writing and prints,
+    per case (valid as-is, string converted, percent stripped, decimal comma, alias
+    key used, proportion rejected, other invalid, missing), a count and 5 examples
+    each of assessment id, raw score token and result; it prints nothing else from
+    the JSON; running it on the seed finishes and shows every case.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: score
+  risk:
+  - pii
+- id: 20
+  summary: Each score rule is a small removable unit
+  category: operational
+  source: user:2026-11-07
+  source_text: once we see the data we can remove the 'rules' that are not applicable
+    to this dataset and simplify it more
+  acceptance: Each rule (key alias, percent strip, decimal comma, range, proportion)
+    is a separate small unit with its own test; the report counts hits per rule; deleting
+    one rule and its test leaves the others passing.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: score
+  risk: []
+- id: 28
+  summary: Task 2 export and dashboard share the contract score reader
+  category: functional
+  source: user:2026-11-07
+  source_text: Task 1 ships the score using a minimal read ... Task 2 swaps in the
+    contract reader
+  acceptance: After Task 2, the export score column and the dashboard score come from
+    the same reader; for every seeded row the two agree; the export shows a blank
+    where the dashboard shows 'Score not available'.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (Q-D)
+  supersedes: Req 9 behaviour
+  domain: score
+  risk: []

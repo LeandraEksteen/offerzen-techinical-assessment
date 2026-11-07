@@ -1,0 +1,4 @@
+rows with more than one candidate key present: 10597
+rows where the first present key is invalid but a later key is valid (fallback matters): 0
+strings with a space before %: 0; strings with comma plus exactly 3 digits: 0; booleans: 0; values exactly 0 or 1: 3
+distinct raw types of the score key: {nil=>74180, "string"=>68905, "number"=>346371, "null"=>10544}

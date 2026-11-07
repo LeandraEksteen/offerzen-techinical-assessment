@@ -111,18 +111,29 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ second_of_day, first_of_day, older ].map { |a| a.employee_id.to_s }, table_rows.map { |row| row[1] }
   end
 
-  # UT-7
-  test "every score shape renders without an error, shown as stored and blank when absent" do
+  # UT-7 / UT-9 (TKT-8)
+  test "every score shape renders without an error: the reader's value, or Score not available" do
     shapes = [ { "score" => 85 }, { "score" => "85%" }, { "score" => 0.85 }, { "score" => 150 }, { "score" => nil },
-               { "comments" => "no score" }, [ 85 ], { "score" => 85 }.to_json, nil ]
+               { "comments" => "no score" }, [ 85 ], { "score" => 85 }.to_json, nil, { "score" => "84,5" },
+               { "assessment_score" => 70 }, { "score" => "N/A", "total_score" => 60 }, { "score" => 84.5 } ]
     shapes.each { |json| add_assessment(responses_json: json) }
     sign_in_as @admin
 
     get dashboard_url
 
     assert_response :success
-    scores = table_rows.map { |row| row[4] }
-    assert_equal [ "85", "85%", "0.85", "150", "", "", "", "", "" ].sort, scores.sort
+    expected = [ "85", "85", "Score not available", "Score not available", "Score not available", "Score not available",
+                 "Score not available", "Score not available", "Score not available", "85", "70", "60", "85" ]
+    assert_equal expected.sort, table_rows.map { |row| row[4] }.sort
+  end
+
+  test "the status of an assessment does not change its score" do
+    [ "pending", "complete", nil, "n/a", "archived" ].each { |status| add_assessment(status: status, responses_json: { "score" => 72 }) }
+    sign_in_as @admin
+
+    get dashboard_url
+
+    assert_equal [ "72" ] * 5, table_rows.map { |row| row[4] }
   end
 
   test "every seeded status and date filter combination returns 200" do
