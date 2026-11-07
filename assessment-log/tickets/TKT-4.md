@@ -2,7 +2,7 @@
 key: TKT-4
 type: Task
 title: Task 2: baseline dashboard and benchmark method
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T09:52:08Z
 ---

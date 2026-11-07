@@ -1,0 +1,97 @@
+---
+schema_version: 1
+key: TKT-12
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 11
+  summary: Finished files are stored through Active Storage as plain CSV; production
+    would use S3-style storage
+  category: operational
+  source: user:2026-11-07
+  source_text: Exactly - final product would be S3 or some other file sharing system
+  acceptance: Files are attached via Active Storage on local disk in dev and test;
+    SOLUTION.md states that production needs S3-style storage because the local disk
+    is ephemeral on a Heroku-like host; the file is not zipped.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes: option of emailing the CSV
+  domain: export
+  risk: []
+- id: 18
+  summary: The score contract and its assumptions are documented where the next developer
+    will see them
+  category: operational
+  source: user:2026-11-07
+  source_text: So ensure this approach is summarised as comments in the code for the
+    next dev to see.
+  acceptance: The score reader file begins with a comment block stating the key order,
+    parsing rules, range rule and limitations; SOLUTION.md has a section stating plainly
+    that the data shape is unknown, listing each assumption and the known legacy issues
+    covered, noting that displayed scores can differ from stored data, and naming
+    a masked production copy as the ideal validation.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: score
+  risk: []
+- id: 26
+  summary: Performance changes ship one at a time, each with measured results
+  category: operational
+  source: user:2026-11-07
+  source_text: No changing things and saying 'it feels faster'
+  acceptance: Baseline, pagination, eager loading, index and the score reader are
+    separate changes, each revertible alone; each records before and after numbers
+    (time and query count); SOLUTION.md has the before/after note and why each step
+    was chosen; no claim in the docs lacks a number.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: performance
+  risk: []
+- id: 35
+  summary: README, SOLUTION.md and a demo outline are delivered
+  category: operational
+  source: prd:OfferZen assignment PDF §Deliverables
+  source_text: A README.md with instructions to run locally. A SOLUTION.md describing
+    the design and trade-offs you made.
+  acceptance: A fresh clone follows the README to a running app, including setting
+    PGPORT (database.yml defaults to 5433), seeding and running the job worker; SOLUTION.md
+    covers design, trade-offs, the async choice, the score assumptions, benchmarks
+    and the Task 3 plan; a demo walkthrough outline exists in assessment-log/.
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: deliverables
+  risk: []
+- id: 38
+  summary: No insecure legacy export is built
+  category: out-of-scope
+  source: user:2026-11-07
+  source_text: T1-6 Yes. agreed
+  acceptance: SOLUTION.md describes the legacy behaviour from the brief and which
+    control addresses each point; no endpoint accepts a company identifier.
+  status: out-of-scope
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: export
+  risk: []
+- id: 39
+  summary: Polling, a global done-banner, status-based score gating or alerts, and
+    staging or production measurement are future work
+  category: out-of-scope
+  source: user:2026-11-07
+  source_text: Once we've normalised the statuses we can maybe look at gating/adding
+    an alert/error log or something - make a note for future development
+  acceptance: SOLUTION.md has a Future work section naming these; none is implemented.
+  status: out-of-scope
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: other
+  risk: []

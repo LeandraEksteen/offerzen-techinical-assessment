@@ -2,7 +2,7 @@
 key: TKT-9
 type: Task
 title: Task 3: assessor status screen, free-text baseline
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T08:28:15Z
 ---

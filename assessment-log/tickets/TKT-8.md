@@ -2,7 +2,7 @@
 key: TKT-8
 type: Task
 title: Task 2: score reader, shared by dashboard and export, plus score report
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T08:28:15Z
 ---

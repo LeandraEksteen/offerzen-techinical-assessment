@@ -1,6 +1,6 @@
 # Read-only report of the statuses assessments hold today, to build the sheet assessors
-# check before any historical backfill (a PLAN, see assessment-log/solution-drafts/
-# status-backfill.md). It reads in id batches and never writes.
+# check before any historical backfill (a PLAN, see
+# SOLUTION.md, "Task 3"). It reads in id batches and never writes.
 #
 #   bin/rails statuses:report
 #

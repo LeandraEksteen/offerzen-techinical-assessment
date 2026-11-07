@@ -421,7 +421,7 @@ requirements:
     category: operational
     source: "prd:OfferZen assignment PDF §Deliverables"
     source_text: "A README.md with instructions to run locally. A SOLUTION.md describing the design and trade-offs you made."
-    acceptance: "A fresh clone follows the README to a running app, including setting PGPORT (database.yml defaults to 5433), seeding and running the job worker; SOLUTION.md covers design, trade-offs, the async choice, the score assumptions, benchmarks and the Task 3 plan; a demo walkthrough outline exists in assessment-log/."
+    acceptance: "A fresh clone follows the README to a running app, including setting PGPORT (database.yml defaults to 5433), seeding and running the job worker; SOLUTION.md covers design, trade-offs, the async choice, the score assumptions, benchmarks and the Task 3 plan; a demo walkthrough outline exists for the author's own use and is deliberately not committed (user, 2026-11-07)."
     status: active
     blocked_on: null
     decided_by: "brief; user, 2026-11-07"

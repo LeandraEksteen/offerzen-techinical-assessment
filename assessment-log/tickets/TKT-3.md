@@ -2,7 +2,7 @@
 key: TKT-3
 type: Task
 title: Task 1: async company-scoped CSV export with history table and minimal TypeScript UI
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T09:21:32Z
 ---

@@ -2,7 +2,7 @@
 key: TKT-6
 type: Task
 title: Task 2: eager loading on the dashboard
-status: In Review
+status: Done
 parent: EPIC-1
 updated: 2026-11-07T10:11:18Z
 ---

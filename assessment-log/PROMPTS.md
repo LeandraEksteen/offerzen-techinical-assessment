@@ -1,27 +1,34 @@
 # Prompts
 
-Verbatim, in order. 68 prompts so far, covering the planning phase. The summary below is for the planning phase and is extended when the build is done.
+Verbatim, in order. 71 prompts, covering planning and the build. The summary below was drafted by the assistant from the prompts themselves.
 
-## Summary: how the planning went
+## Summary: how the work went
 
-**What this is.** The planning half of an OfferZen take-home (extend a legacy Rails app: a company-scoped CSV export, a faster dashboard with a trustworthy score, and a safe status normalisation). The work was done with an AI coding assistant. These prompts show how the author directed it.
+**What this is.** An OfferZen take-home (extend a legacy Rails app: a company-scoped CSV export, a faster dashboard with a trustworthy score, and a safe status normalisation), done with an AI coding assistant. These prompts show how the author directed it. The first 27 prompts are planning, the rest are the build.
 
 **How the author worked**
 - **Rules before code.** First prompt set the ground rules: no commits or PRs without permission, no assumptions (ask instead), and ticket everything as on a real team (one epic, one groomed ticket per task, one PR per ticket). Deliverables were handed over before the brief, so they stayed in view.
 - **Context before tasks, tasks before scaffold.** The brief was given in two steps, and the scaffold (tables, sign-in, seed data) was inferred from the tasks rather than assumed.
 - **A spec with provenance.** Every requirement is traced to its source (the brief or a dated author decision) in `spec/`. Questions were asked task by task, each with a recommended answer, and the answers were logged as decisions.
 - **Pushing back on recommendations with domain reasoning.** Several of the assistant's proposals were overruled for stated reasons: async instead of streaming (ten years of data, an already slow dashboard); filtering on `assessment_date`, not `created_at` (an assessment can be scheduled but not completed); a status dropdown built from stored values, since an alias list cannot be kept current without write-side enforcement; the database constraint dropped ("not the db's responsibility"); no "scores may differ" footnote, because a displayed score must not make the user doubt it.
-- **Treating health data carefully.** One shared PII scrubber for exports, logs and error logs; an export allow-list; email shown instead of name with a compliance caution; only distinct values and counts shared in the mapping sheet.
+- **Treating health data carefully.** One shared PII scrubber for exports, logs and error logs; an export allow-list; email shown instead of name with a compliance caution; only distinct values and counts shared in the mapping sheet; "do not echo the seeded dev password in chat".
 - **Honesty about unknowns.** The score's shape is not in the brief. Rather than hiding that, the author chose an explicit, documented contract (read-time only, easy to prune once real data is seen) and asked for the assumptions to be stated plainly in code comments and SOLUTION.md, with a masked production copy as the ideal validation.
 - **Measure, don't feel.** Performance work is baselined first and shipped one change at a time with numbers ("no changing things and saying it feels faster"). The author reasoned through tools (Bullet, rack-mini-profiler, APM, local versus staging versus production) before choosing what to improve.
 - **Safe change thinking.** For Task 3 the author put it in order: stop bad data at the source first (assessor front end, a change request with a cut-over date, Ruby validation), agree a mapping with the assessors, then backfill through a new column with a kept legacy column. That gives a rollback by rename instead of a full restore, with a backup right before the rename. The assistant added dual-write, lock-timeout and verification points, and the author accepted them.
 - **Checking the assistant's work.** The author caught that the Task 3 questions had been skipped and sent the assistant back, asked it to check against the full PDF, and asked for each task's constraints to be reviewed before moving on.
 
-**Outputs of this phase**
-- 68 prompts, 29 numbered decisions (`DECISIONS.md`).
+**How the build went**
+- **One ticket, one PR, in order.** After planning, each ticket followed the same loop: plan (`/build`), the author's answer to the open questions ("Implement", which accepted the recommendations), implementation and checks, "Commit and open PR", the author merges, "merged, continue". Nothing was committed, pushed or opened without that explicit word.
+- **Holding the brief in view.** At TKT-10 the author restated the brief's Task 3 requirement ("Design, but do not fully execute, a plan to bring historical records into alignment"), which kept the backfill a plan, guarded by tests, and not code.
+- **Testing against a real environment.** After Task 1 the author asked for a click-through test plan with the local app as "staging" and had it run (with the correct browser profile), asked for screenshots of the basic functionality in the PR, and for fixes to be committed to the PR branch.
+- **Deciding what ships.** For the last ticket the author kept the demo outline out of the commits ("thats just for my use").
+
+**Outputs**
+- 71 prompts, 30 numbered decisions (`DECISIONS.md`).
 - An approved spec with 44 requirements: 40 active, 3 out of scope, 1 dropped (`spec/`).
-- One epic and 12 tickets in build order (`tickets/`).
-- No application code yet.
+- One epic and 12 tickets, one PR each (`tickets/`, `plans/`).
+- A working app: company-scoped async CSV export, a dashboard that went from 421 ms and 1,414 queries to 7 ms and 4 (and from 58,019 ms and 199,064 queries to 6 ms and 4 for the largest company), a shared score reader, the status rule with a cut-over date and a dropdown, a status report, and a backfill plan with rehearsal numbers (`../SOLUTION.md`, `benchmarks/`).
+- A test suite of 208 tests, plus guard tests that keep the plan-only promises true.
 
 ---
 
@@ -710,3 +717,22 @@ Implement
 ## Prompt 68
 
 Commit and open PR
+
+---
+
+## Prompt 69
+
+merged, continue
+
+---
+
+## Prompt 70
+
+Adjust
+
+---
+
+## Prompt 71
+
+keep the demo doc out of the commits, thats just for my use
+rest you can commit and create pr
