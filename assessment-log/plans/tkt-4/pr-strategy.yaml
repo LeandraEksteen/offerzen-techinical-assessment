@@ -1,0 +1,63 @@
+schema_version: 1
+key: TKT-4
+title: "Task 2: baseline dashboard and benchmark method"
+jira: assessment-log/tickets/TKT-4.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-4 | Task 2: baseline dashboard and benchmark method"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-4/baseline-dashboard-benchmark
+    stack: rails
+    implements: []
+    role: none
+    requirements: [21, 22, 27]
+    scope:
+      - Gemfile
+      - Gemfile.lock
+      - config/environments/development.rb
+      - config/initializers/
+      - config/routes.rb
+      - app/controllers/
+      - app/views/
+      - app/helpers/
+      - app/models/
+      - app/services/
+      - lib/
+      - lib/tasks/
+      - test/
+      - assessment-log/
+    changes: |
+      Add a company-scoped dashboard (employee email, employee id, assessment date, status, score as stored)
+      with the export's date range and status filters, deliberately unpaginated and reading each employee
+      through the association so an N+1 is real. Add Bullet and rack-mini-profiler to development, a
+      repeatable in-process benchmark task and a page-1 snapshot task, and record the baseline numbers
+      (query count, time, HTML size, EXPLAIN ANALYZE, a load test) on the 500k seed in a benchmarks file.
+    stubs: none
+    tests:
+      - "UT-1 [positive] the dashboard lists only the signed-in admin's company with the five columns"
+      - "UT-2 [negative] signed-out visitors are redirected to sign-in"
+      - "UT-3 [positive] the date and status filters select exactly the rows the export selects for the same filters"
+      - "UT-4 [positive] the status select offers the company's own grouped statuses"
+      - "UT-5 [negative] a start date after the end date returns 422 with a message and no table"
+      - "UT-6 [edge] rows are ordered by assessment date descending, then id descending"
+      - "UT-7 [edge] every score shape in the seed renders without an error; the stored value is shown as is and blank when absent"
+      - "UT-8 [positive] the baseline reads each employee separately: the query count grows with the number of rows"
+      - "UT-9 [positive] loading the dashboard with filters leaves no emails, response content or raw scores in the captured log"
+      - "UT-10 [positive] the snapshot task prints the first 50 rows with a stable digest and no emails"
+      - "UT-11 [positive] the benchmark task prints rows, queries, milliseconds and bytes for each scenario and refuses to run outside development"
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Development-only gems and a new page; nothing is deployed in this exercise.
+manual_checks:
+  - "MC-1 [manual] local: run the benchmark task for the three scenarios on the 500k seed and record the numbers"
+  - "MC-2 [manual] local: load the dashboard in the browser and confirm Bullet reports the N+1 on employees in the development log"
+  - "MC-3 [manual] local: confirm the rack-mini-profiler badge appears and lists the repeated employee query"
+  - "MC-4 [manual] local: run EXPLAIN ANALYZE for the dashboard's main query and record the plan and time"
+  - "MC-5 [manual] local: run the load test with ab against the normal-user page and record requests per second and latency"
+conflict_risks: []

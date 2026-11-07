@@ -1,0 +1,71 @@
+require "test_helper"
+
+class DashboardProbeTest < ActiveSupport::TestCase
+  setup do
+    @company = create_company(name: "Company 01")
+    create_admin(company: @company, email: "admin1@company-1.example.test")
+  end
+
+  def probe
+    DashboardProbe.new(email: "admin1@company-1.example.test", password: TEST_PASSWORD)
+  end
+
+  def add_rows(count)
+    count.times do |n|
+      employee = @company.employees.create!(name: "Person #{n}", email: "person#{n}@example.test")
+      Assessment.create!(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n, status: "pending", responses_json: { "score" => 50 + n })
+    end
+  end
+
+  # UT-10
+  test "the snapshot prints the first rows with a stable digest and no emails" do
+    add_rows(60)
+
+    lines = probe.snapshot("/dashboard")
+
+    assert_equal 50, lines.size
+    assert_equal lines, probe.snapshot("/dashboard")
+    assert lines.first.match?(/\A\d+ \| 2025-03-01 \| "pending" \| "109" \| \h{8}\z/), "unexpected first line: #{lines.first}"
+    assert_no_match(/example\.test|@/, lines.join("\n"))
+  end
+
+  test "the snapshot of a smaller page has only the rows there are" do
+    add_rows(3)
+
+    assert_equal 3, probe.snapshot("/dashboard").size
+  end
+
+  # UT-11
+  test "measure reports status, queries, milliseconds, bytes and rows" do
+    add_rows(4)
+
+    result = probe.measure("/dashboard")
+
+    assert_equal 200, result.status
+    assert_equal 4, result.rows
+    assert_operator result.queries, :>=, 4
+    assert_operator result.cache_hits, :>=, 0
+    assert_operator result.bytes, :>, 0
+    assert_operator result.ms, :>=, 0
+  end
+
+  test "the benchmark refuses to run outside development" do
+    error = assert_raises(RuntimeError) { DashboardBenchmark.new(keys: [ "normal" ], runs: 1, output: StringIO.new).call }
+
+    assert_match(/development only/, error.message)
+  end
+
+  test "the benchmark runs a scenario and prints rows, queries, ms and size" do
+    company_two = create_company(name: "Company 02")
+    create_admin(company: company_two, email: "admin2@company-2.example.test")
+    employee = company_two.employees.create!(name: "Person", email: "person@example.test")
+    3.times { Assessment.create!(company: company_two, employee: employee, assessment_date: Date.new(2024, 6, 1), status: "done") }
+    io = StringIO.new
+
+    DashboardBenchmark.new(keys: [ "normal" ], runs: 2, password: TEST_PASSWORD, output: io, enforce_development: false).call
+
+    row = io.string.lines.last
+    assert_match(/\A\| Company 02, assessment dates in 2024 \| 3 \| \d+ \| \d+ \| \d+ \(\d+-\d+\) \| \d+ KB \| HTTP 200 \|\z/, row.strip)
+    assert_no_match(/@/, io.string)
+  end
+end

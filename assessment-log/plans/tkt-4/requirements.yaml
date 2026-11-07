@@ -1,0 +1,55 @@
+---
+schema_version: 1
+key: TKT-4
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 21
+  summary: The dashboard is one company-scoped table with date and status filters
+  category: functional
+  source: user:2026-11-07
+  source_text: yes I think so. maybe use email instead of name as an identifier?
+  acceptance: The page lists only the signed-in admin's company assessments with columns
+    employee email, employee id, assessment date, status, score; its date and status
+    filters use the same semantics as Req 5 and Req 6; it is visible only to signed-in
+    admins.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes: my proposal to show employee name
+  domain: dashboard
+  risk:
+  - pii
+  - permissions
+- id: 22
+  summary: A baseline legacy dashboard and a benchmark method are fixed before any
+    change
+  category: operational
+  source: user:2026-11-07
+  source_text: Before even thinking of what to improve we need to agree what we're
+    assuming and how we're benchmarking
+  acceptance: A first change adds the unpaginated dashboard with an N+1 on employees;
+    measurements on the 500k seed using Bullet, rack-mini-profiler, EXPLAIN ANALYZE
+    and a simple load test (hey or k6) are recorded as numbers before any improvement;
+    staging, production and APM measurement are described in SOLUTION.md only.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: performance
+  risk: []
+- id: 27
+  summary: The page keeps working through each change
+  category: edge-case
+  source: prd:OfferZen assignment PDF §Task 2
+  source_text: Keep the page working while you improve it.
+  acceptance: Before and after each change, page 1 of the seeded big company shows
+    the same rows in the same order with the same values (apart from scores fixed
+    by the score reader); the page returns 200 for every status and date filter combination
+    in the seed.
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: dashboard
+  risk: []

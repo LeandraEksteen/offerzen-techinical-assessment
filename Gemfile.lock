@@ -90,6 +90,9 @@ GEM
     brakeman (8.1.0)
       racc
     builder (3.3.0)
+    bullet (8.3.1)
+      activesupport (>= 3.0.0)
+      uniform_notifier (~> 1.11)
     bundler-audit (0.9.3)
       bundler (>= 1.2.0)
       thor (~> 1.0)
@@ -237,6 +240,8 @@ GEM
     raabro (1.5.0)
     racc (1.8.1)
     rack (3.2.8)
+    rack-mini-profiler (5.0.0)
+      rack (>= 1.2.0)
     rack-session (2.1.2)
       base64 (>= 0.1.0)
       rack (>= 3.0.0)
@@ -368,6 +373,7 @@ GEM
     unicode-display_width (3.3.0)
       unicode-emoji (~> 4.3)
     unicode-emoji (4.3.0)
+    uniform_notifier (1.18.1)
     uri (1.1.2)
     useragent (0.16.11)
     web-console (4.3.0)
@@ -399,6 +405,7 @@ DEPENDENCIES
   bcrypt (~> 3.1.7)
   bootsnap
   brakeman
+  bullet
   bundler-audit
   capybara
   csv
@@ -410,6 +417,7 @@ DEPENDENCIES
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
+  rack-mini-profiler
   rails (~> 8.1.4, >= 8.1.4.1)
   rubocop-rails-omakase
   selenium-webdriver

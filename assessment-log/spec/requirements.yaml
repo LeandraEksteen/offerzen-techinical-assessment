@@ -264,7 +264,7 @@ requirements:
     category: operational
     source: "user:2026-11-07"
     source_text: "Before even thinking of what to improve we need to agree what we're assuming and how we're benchmarking"
-    acceptance: "A first change adds the unpaginated dashboard with an N+1 on employees; measurements on the 500k seed using Bullet, rack-mini-profiler, EXPLAIN ANALYZE and a simple load test (hey or k6) are recorded as numbers before any improvement; staging, production and APM measurement are described in SOLUTION.md only."
+    acceptance: "A first change adds the unpaginated dashboard with an N+1 on employees; measurements on the 500k seed using Bullet, rack-mini-profiler, EXPLAIN ANALYZE and a simple load test (ab, hey or k6) are recorded as numbers before any improvement; staging, production and APM measurement are described in SOLUTION.md only."
     status: active
     blocked_on: null
     decided_by: "user, 2026-11-07"

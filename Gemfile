@@ -60,6 +60,10 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # Performance diagnosis (switch off with BULLET=off and MINI_PROFILER=off when timing).
+  gem "bullet"
+  gem "rack-mini-profiler"
 end
 
 group :test do

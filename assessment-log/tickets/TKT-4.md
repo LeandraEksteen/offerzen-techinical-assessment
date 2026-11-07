@@ -2,9 +2,9 @@
 key: TKT-4
 type: Task
 title: Task 2: baseline dashboard and benchmark method
-status: To Do
+status: In Review
 parent: EPIC-1
-updated: 2026-11-07T08:28:15Z
+updated: 2026-11-07T09:52:08Z
 ---
 
 ## Description
@@ -34,3 +34,4 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: baseline `DashboardController`, view and helper (company-scoped, five columns, `Assessment.matching` shared with the export so the two filters cannot disagree, unpaginated, employee read through the association, naive stored score); Bullet and rack-mini-profiler (development only, `BULLET=off` / `MINI_PROFILER=off` switches); `DashboardProbe`, `DashboardBenchmark`, and the `benchmark:dashboard`, `benchmark:explain` and `dashboard:snapshot` tasks; 103 tests (stable over 3 runs), rubocop, brakeman, bundler-audit and typecheck clean. Spec wording amended: Req 22 load test is "ab, hey or k6" (`ab` is installed, the others are not). Baseline on the 500k seed (development, profilers off, median of 5, M1 Pro): normal user (Company 02, 2024) 1,516 rows, 1,414 queries, 421 ms; Company 02 all 15,790 rows, 14,787 queries, 3,921 ms; Company 01 all 200,000 rows, 199,064 queries, 58 s, 37 MB page, 2.09 GB peak memory. Load test with `ab` on the normal-user page: 2.44 requests/s at concurrency 1 (410 ms mean), 2.98 requests/s at concurrency 3 (1,006 ms mean). The main query itself takes only 44 to 153 ms (EXPLAIN ANALYZE), so most of the time is Ruby (per-row objects, per-row employee query, rendering): pagination and eager loading matter more than the index. Findings: the first benchmark showed only 43 queries for 15,790 rows because the seed gave each company only 40 employees and Rails' query cache answered the repeats, so the seeder now creates about one employee per ten assessments and the dev database was re-seeded (this changes the Task 1 test-plan counts, noted in the plan); `ab`, not `hey` or `k6`, is on this machine.

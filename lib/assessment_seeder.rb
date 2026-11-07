@@ -41,6 +41,8 @@ class AssessmentSeeder
   ].freeze
 
   DEFAULT_PASSWORD = "dev-only-password".freeze
+  # Assessments per employee: a yearly assessment over ten years.
+  EMPLOYEE_RATIO = 10
 
   def initialize(total:, companies: 20, big_share: 0.4, seed: 42, batch_size: 5_000, output: $stdout)
     @total = total
@@ -58,8 +60,9 @@ class AssessmentSeeder
     quietly do
       companies = ensure_companies
       ensure_admins(companies)
-      employees = ensure_employees(companies)
-      insert_assessments(companies, employees)
+      plan = allocations(companies)
+      employees = ensure_employees(companies, plan)
+      insert_assessments(plan, employees)
     end
   end
 
@@ -86,11 +89,12 @@ class AssessmentSeeder
     end
   end
 
-  # The first (big) company gets more employees, like the ten-year customer.
-  def ensure_employees(companies)
+  # About one employee per ten assessments (a yearly assessment over ten years),
+  # so a company's page does not show the same few employees over and over.
+  def ensure_employees(companies, plan)
     rows = []
     companies.each_with_index do |company, index|
-      count = index.zero? ? 400 : 40
+      count = [ (plan.fetch(company.id) / EMPLOYEE_RATIO.to_f).ceil, 5 ].max
       count.times do |n|
         first = FIRST_NAMES[@random.rand(FIRST_NAMES.size)]
         last = LAST_NAMES[@random.rand(LAST_NAMES.size)]
@@ -118,8 +122,7 @@ class AssessmentSeeder
     end
   end
 
-  def insert_assessments(companies, employees)
-    plan = allocations(companies)
+  def insert_assessments(plan, employees)
     queue = plan.flat_map { |company_id, count| Array.new(count, company_id) }.shuffle(random: @random)
     inserted = 0
     queue.each_slice(@batch_size).with_index do |slice, batch_index|
