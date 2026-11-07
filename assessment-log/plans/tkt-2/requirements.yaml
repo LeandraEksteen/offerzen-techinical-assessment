@@ -1,0 +1,39 @@
+---
+schema_version: 1
+key: TKT-2
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 12
+  summary: One PII scrubbing service covers exports, logs and error logs
+  category: business-rule
+  source: user:2026-11-07
+  source_text: We should make a service that scrubs PII from any and all models -
+    this is for export and logs/error logs
+  acceptance: Each model declares its PII attributes once (for example employee_email,
+    responses_json); that declaration drives the Rails parameter filter, inspect output
+    and a formatter that redacts those values in logs and error logs; export rows
+    pass through it as a second guard; background-job arguments carry ids only.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: logging
+  risk:
+  - pii
+- id: 13
+  summary: Export and dashboard requests leave no sensitive values in logs
+  category: operational
+  source: prd:OfferZen assignment PDF §Task 1
+  source_text: Avoid exposing sensitive values in logs related to this feature.
+  acceptance: After a scripted run of an export (including a failing one) and dashboard
+    loads with filters, the captured log and error output contains no employee email,
+    response content or raw score value (checked by a test that greps the captured
+    log).
+  status: active
+  blocked_on:
+  decided_by: brief; user, 2026-11-07
+  supersedes:
+  domain: logging
+  risk:
+  - pii

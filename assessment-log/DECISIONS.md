@@ -82,3 +82,9 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **Seed layout:** `db/seeds.rb` stays small because `bin/ci` runs `db:seed:replant` in the test environment. The 500,000-row dataset is a separate task, `assessments:seed`, deterministic and refusing to run in production. It silences SQL logging so no emails or responses reach the log.
 - **Dev sign-in:** seeded admins use a documented development password from `SEED_ADMIN_PASSWORD` (default in the seeder), never used outside seeding.
 
+## D-020: PII scrubbing design (TKT-2)
+- **One declaration per model:** `pii_attributes` registers names for the scrubber, the global request parameter filter and `inspect` redaction. Declared: Assessment (`employee_email`, `responses_json`), Employee (`name`, `email`), Admin (`email`, `password_digest`). A company name is not treated as personal.
+- **Formatter as backstop:** every log line, including error logs, is scrubbed after formatting (emails and declared attribute values in hash, JSON, key-colon, SQL equals and bind-array shapes). It fails closed. Production builds its own logger, so the formatter is passed to it explicitly.
+- **Primary protection is not logging data:** job arguments are ids or records only and are not logged; bulk SQL is not logged (the seeder silences it).
+- **Known limits:** positional values in bulk `INSERT` SQL cannot be matched by attribute name (only emails are caught); `as_json`, `pluck` and rendered HTML are not scrubbed; the global parameter filter also hides any parameter called `name`; the development error page can show values.
+
