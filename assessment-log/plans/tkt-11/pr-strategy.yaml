@@ -1,0 +1,61 @@
+schema_version: 1
+key: TKT-11
+title: "Task 3: status report and the backfill, release and rollback plan"
+jira: assessment-log/tickets/TKT-11.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-11 | Task 3: status report and the backfill, release and rollback plan"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-11/status-report-backfill-plan
+    stack: rails
+    implements: []
+    role: none
+    requirements: [31, 32, 33, 34, 42, 43]
+    scope:
+      - lib/status_report.rb
+      - lib/status_mapping.rb
+      - lib/tasks/statuses.rake
+      - db/status_mapping.yml
+      - test/
+      - assessment-log/
+    changes: |
+      A read-only report, `bin/rails statuses:report`: reads assessments in id batches without writing and
+      prints one row per distinct status value as stored (NULL, empty and blank shown as such, case and
+      whitespace variants kept apart) with a row count and the latest updated_at; free-looking text is
+      described by length, never printed; no ids, rows or emails. When db/status_mapping.yml exists it also
+      prints rows per mapped canonical status and the number of unmapped values and rows, and says whether the
+      mapping is a draft. A StatusMapping loader (normalises like StatusOptions, validates targets against
+      Assessment::STATUSES). A draft mapping file (approved: false) from the author's draft aliases. Guard tests:
+      the raw SQL that names the status column exists only in StatusOptions::NORMALISED_SQL; no application
+      code path updates historical statuses. The plan itself is a document, assessment-log/solution-drafts/
+      status-backfill.md (merged into SOLUTION.md by TKT-12): mapping sheet and mapping file, change request
+      outline, new column with dual-write and one owner of the column name, the seven-step release and
+      rollback plan with live-safe and low-traffic labels, backup and recovery, lock and responsiveness
+      safeguards with pause thresholds. No migration and no backfill code.
+    stubs: none
+    tests:
+      - "UT-1 [positive] the report prints one row per distinct stored value with a count and the latest updated_at, case and whitespace variants kept apart"
+      - "UT-2 [edge] NULL, empty and blank-only values are separate labelled rows"
+      - "UT-3 [negative] the report is read-only: no INSERT, UPDATE, DELETE or DDL runs and no status or updated_at changes"
+      - "UT-4 [edge] batching by id gives the same totals as one pass (small batch size)"
+      - "UT-5 [negative] free-looking text and email-shaped values are never printed; no ids or employee data in the output"
+      - "UT-6 [positive] with a mapping file the report prints rows per mapped status and the unmapped values and rows; without one it says there is no mapping file"
+      - "UT-7 [edge] the mapping loader normalises like StatusOptions, rejects targets outside Assessment::STATUSES and duplicate keys, and labels an unapproved file a draft"
+      - "UT-8 [edge] the committed draft mapping file loads and every target is canonical"
+      - "UT-9 [negative] the raw SQL that names the status column exists only in StatusOptions::NORMALISED_SQL"
+      - "UT-10 [negative] no application code path updates historical statuses (no update_all, update_columns, insert_all on assessments outside the seeder; no new migration touches status)"
+    test_command: >-
+      bin/rails test test/lib/status_report_test.rb test/lib/status_mapping_test.rb test/lib/status_guards_test.rb
+    lint_command: bin/rubocop
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: No migration, no config, nothing runs on deploy. The report is run by hand. The rest of the PR is a document (the plan), which executes nothing.
+manual_checks:
+  - "MC-1 [manual] 500k dev seed: run statuses:report, its totals equal a SQL GROUP BY, runtime recorded, output has no free text or ids"
+  - "MC-2 [manual] throwaway copy of the dev database: time add-column (lock held), a 5,000-row batch update, the partial index CONCURRENTLY, the verification count with and without it, and the two renames in one transaction; numbers go in the plan document, nothing else is committed"
+  - "MC-3 [manual] read the plan document against Req 31 to 34, 42 and 43: every step has a label, a lock note and a rollback; thresholds, backup and recovery commands present"
+conflict_risks: []

@@ -1,0 +1,128 @@
+---
+schema_version: 1
+key: TKT-11
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 31
+  summary: Historical mapping comes from a reviewed sheet of distinct values, stored
+    as a versioned file
+  category: business-rule
+  source: user:2026-11-07
+  source_text: make a google sheet with all the status values currently in the table
+    for all records and try to map them to the new standard values. where in doubt
+    we'll pull in the assessors
+  acceptance: SOLUTION.md describes the sheet (only distinct status values with a
+    row count and latest updated_at, never rows or ids, scanned for free text before
+    sharing), assessor confirmation for doubtful values, and a versioned mapping file
+    in the repo used by the backfill; the author's draft aliases are only a starting
+    guess; a value without an approved mapping stays NULL in the new column and blocks
+    the switch.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-D accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition
+- id: 32
+  summary: Rollback keeps the legacy column written; backup right before the rename;
+    full restore is the last resort
+  category: operational
+  source: user:2026-11-07
+  source_text: Exactly. Obviously we would still do a backup right before the rename
+    just in case
+  acceptance: SOLUTION.md states the legacy column keeps receiving the canonical value
+    after the alias switch until it is dropped; rollback is a code deploy before the
+    rename and the reverse rename after it; a pg:backups:capture is taken immediately
+    before the rename; restoring a backup is described as the last resort because
+    it loses later writes.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-H accepted)
+  supersedes: my side-table proposal
+  domain: status
+  risk:
+  - state-transition
+- id: 33
+  summary: A read-only status report ships; nothing in the repo updates historical
+    statuses
+  category: functional
+  source: prd:OfferZen assignment PDF §Task 3
+  source_text: Design, but do not fully execute, a plan to bring historical records
+    into alignment.
+  acceptance: A rake task reads in batches without writing and prints one row per
+    distinct status value (as stored) with a count and the latest updated_at; once
+    a mapping file exists it also prints counts per mapped result and the number of
+    unmapped values; the code contains no path that updates historical statuses.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-G accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition
+- id: 34
+  summary: SOLUTION.md has the step-by-step release and rollback plan for a Heroku-like
+    host
+  category: operational
+  source: prd:OfferZen assignment PDF §Task 3
+  source_text: provide a step by step release and rollback plan suitable for a Heroku
+    like environment, including how you would capture a database backup before the
+    change and how you would recover if needed.
+  acceptance: 'The plan lists in order: (1) add a nullable column (instant) and deploy
+    code writing both columns; (2) backfill in batches of about 5,000 ids from a one-off
+    dyno, throttled, resumable, idempotent; (3) verify 100% filled and no unmapped;
+    (4) switch the app to the new column with an alias; (5) keep writing the legacy
+    column; (6) rename in a short low-traffic window with Heroku maintenance mode,
+    both renames in one transaction under a short lock_timeout, then deploy code using
+    plain status; (7) drop legacy_status later. Steps 1 to 4 and the report are labelled
+    live-safe; step 6 is labelled low-traffic window; each step has its rollback and
+    a backup is captured before step 6.'
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-H accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition
+- id: 42
+  summary: The column migration is described, not implemented, with dual-write and
+    one owner for the column name
+  category: operational
+  source: user:2026-11-07
+  source_text: create a new column with the mapped status, fill that up and then rename
+    the old staus to legacy_status and the new one to status
+  acceptance: SOLUTION.md describes the new-column approach as plan only; it states
+    that rows written during the backfill are covered by writing both columns before
+    the backfill starts and by a final catch-up pass before the switch; it states
+    that raw SQL that names the status column (dashboard, export, status select) lives
+    in one place so the switch changes it once; no migration or backfill execution
+    is in the repo.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-C); dual-write point agreed by user 2026-11-07
+    (Prompt 19)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition
+- id: 43
+  summary: Lock and responsiveness safeguards for the large table are stated and agreed
+  category: operational
+  source: user:2026-11-07
+  source_text: Keep the app responsive throughout. Avoid changes that would lock or
+    stall the large assessments table.
+  acceptance: 'SOLUTION.md names for each step its lock behaviour and mitigation:
+    short lock_timeout with retry on the column add, the rename and the later drop;
+    row-id batches with a throttle; pause thresholds of replication lag over 5 seconds,
+    any lock wait over 2 seconds, or request latency over 1.5 times baseline; no long
+    transactions; any index on the new column built CONCURRENTLY; verification counts
+    run off the primary or on a partial index; statement_timeout on the backfill.'
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (T3-J accepted)
+  supersedes:
+  domain: status
+  risk:
+  - state-transition

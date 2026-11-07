@@ -2,7 +2,7 @@
 key: TKT-11
 type: Task
 title: Task 3: status report and the backfill, release and rollback plan
-status: To Do
+status: In Review
 parent: EPIC-1
 updated: 2026-11-07T08:28:15Z
 ---
@@ -36,3 +36,6 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: `bin/rails statuses:report` (`StatusReport`, read-only, id batches, distinct stored values with count and latest updated_at, free-looking text described by length only, no ids or employee data), `StatusMapping` and a draft `db/status_mapping.yml` (approved: false), two guard tests (raw status SQL only in `StatusOptions::NORMALISED_SQL`; no application path updates historical statuses). The plan is `assessment-log/solution-drafts/status-backfill.md` (merged into SOLUTION.md by TKT-12). 202 runs, 0 failures; rubocop, brakeman, bundler-audit clean. No migration, nothing executed.
+- 2026-11-07 measurements: report on the 500k seed 4.7 s, 14 distinct values, totals equal SQL (500,000; 13 non-null values plus NULL); the draft maps 446,246 rows, 53,754 stay unmapped. Rehearsal on a throwaway copy (dropped afterwards): add column 0.9 ms (a held lock made `lock_timeout` 1 s give up after 1.005 s), 100 batches of 5,000 ids median 60 ms and 5.7 s in total, rerun touches 0 rows, table grew 294 to 541 MB with 443k dead rows (only 3,434 HOT updates), verification count about 65 ms with or without a partial index, both renames under 0.5 ms each.
+

@@ -221,3 +221,8 @@ The two `ab` runs are not strictly comparable (20 against 40 requests, warm agai
 ## Not measured here
 
 Staging, production and APM (Datadog or similar). In a real environment the same scenarios would be repeated on staging and compared with production APM traces before and after each change; the numbers above are local and relative.
+
+## Task 3 numbers (TKT-11)
+
+The status report and the backfill rehearsal numbers are in `assessment-log/solution-drafts/status-backfill.md` and `assessment-log/benchmarks/status-report-500k-seed.txt` (report output on the 500k seed, 4.7 s).
+
