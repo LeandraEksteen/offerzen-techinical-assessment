@@ -122,3 +122,10 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **Honest limits:** the index does not help deep pages (the planner still scans and sorts), the export's date-range batches (they use the primary key), or the status-list query (about 58 ms on a cache miss, mitigated by its 10-minute cache). No status index (agreed).
 - **Write overhead** was not measurable above noise at 500,000 rows (0.096 ms against 0.088 ms per insert); it grows with the table and is noted as a limitation.
 
+## D-026: The score reader is read-time, SQL-fed and shared (TKT-8)
+- **One reader, two consumers:** `ScoreReader` serves the dashboard and the CSV export, so they cannot disagree (tested for every seeded shape). Stored `responses_json` is never rewritten (D-014).
+- **SQL feeds the reader:** only the four candidate keys are read (`responses_json->'key'`), so free-text comments never reach Ruby and the large column is not loaded. 200,000-row export median 3,767 to 2,552 ms.
+- **Contract choices made while building:** the first valid key wins (an invalid `score` falls through to an alias); booleans, objects and arrays are invalid; comma plus exactly three digits is ambiguous and invalid; 0 and 1 are valid, anything strictly between is a proportion and is rejected, not scaled; round half up.
+- **Failure behaviour:** a row that fails shows "Score not available" and logs only the error class and assessment id; the page stays 200.
+- **The report prints no free text:** a token is shown only if it is digits and number punctuation or a placeholder word such as N/A, else `[text, N characters]` (Req 19 amended). On the 500k seed 81.0% of rows show a score; the real data should be checked with a masked production copy before trusting the rules.
+

@@ -1,0 +1,82 @@
+Score report: 500000 assessments (read only; nothing is written)
+
+Cases (one per row; the first that applies):
+  valid_as_is             277226   55.4%
+  string_converted         26415    5.3%
+  percent_stripped         15961    3.2%
+  decimal_comma            10712    2.1%
+  rounded                  42580    8.5%
+  alias_key                31973    6.4%
+  proportion_rejected      16038    3.2%
+  other_invalid            26344    5.3%
+  missing                  52751   10.6% (of which the root is not an object: 10575)
+  shown with a score      404867   81.0%
+
+Rules applied (rows each rule was needed for; delete a rule the real data never needs):
+  alias_key                31973
+  string_number            53088
+  percent_sign             15961
+  decimal_comma            10712
+  round_half_up            53292
+
+Reasons for no score:
+  missing                  52751
+  proportion               16038
+  not_numeric              15817
+  out_of_range             10527
+
+Examples (assessment id | raw token | result; tokens that are not numbers or a placeholder word such as N/A are described, never printed):
+  valid_as_is
+    1 | 43 | 43
+    10 | 50 | 50
+    22 | 57 | 57
+    23 | 70 | 70
+    26 | 77 | 77
+  string_converted
+    4 | 60 | 60
+    25 | 53 | 53
+    48 | 60 | 60
+    61 | 77 | 77
+    72 | 60 | 60
+  percent_stripped
+    5 | 57% | 57
+    24 | 47% | 47
+    135 | 47% | 47
+    265 | 47% | 47
+    271 | 80% | 80
+  decimal_comma
+    6 | 50,5 | 51
+    123 | 77,5 | 78
+    134 | 50,5 | 51
+    140 | 47,5 | 48
+    184 | 57,5 | 58
+  rounded
+    2 | 43.5 | 44
+    3 | 59.99999 | 60
+    44 | 43.5 | 44
+    51 | 67.5 | 68
+    71 | 57.5 | 58
+  alias_key
+    7 | 67 | 67
+    8 | 60 | 60
+    9 | 67 | 67
+    34 | 57 | 57
+    55 | 47 | 47
+  proportion_rejected
+    11 | 0.67 | proportion
+    30 | 0.67 | proportion
+    78 | 0.4 | proportion
+    165 | 0.67 | proportion
+    339 | 0.7 | proportion
+  other_invalid
+    12 | 150 | out_of_range
+    13 | -5 | out_of_range
+    14 | N/A | not_numeric
+    15 |  | not_numeric
+    141 | N/A | not_numeric
+  missing
+    16 | (no score key) | missing
+    17 | (no score key) | missing
+    18 | (no score key) | missing
+    19 | (no score key) | missing
+    20 | (no score key) | missing

@@ -1,11 +1,15 @@
 module DashboardHelper
-  # BASELINE, deliberately naive: the top-level "score" exactly as stored when the
-  # JSON is an object, blank otherwise. So "85%", 0.85 or 150 show as they are
-  # and a missing score is blank. The score reader that replaces this is a later
-  # ticket (TKT-8); it must be the only change to what this column shows.
-  def stored_score(assessment)
-    json = assessment.responses_json
-    json["score"] if json.is_a?(Hash)
+  SCORE_UNAVAILABLE = "Score not available".freeze
+
+  # The score as the reader (ScoreReader) reads it, or "Score not available". It
+  # never raises: if anything goes wrong for one row, only that row is affected, and
+  # only the error class and the assessment id are logged, never a value.
+  def displayed_score(assessment)
+    score = assessment.score_outcome.score
+    score.nil? ? SCORE_UNAVAILABLE : score
+  rescue StandardError => error
+    Rails.logger.error("score display failed assessment=#{assessment.id} error=#{error.class}")
+    SCORE_UNAVAILABLE
   end
 
   # Link to another page, keeping only the date and status filters. No other

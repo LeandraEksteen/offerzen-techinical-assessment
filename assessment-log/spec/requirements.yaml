@@ -180,7 +180,7 @@ requirements:
     category: data-contract
     source: "user:2026-11-07"
     source_text: "we'll have to make an educated guess/assumption and stick with it"
-    acceptance: "A reader returns the score as an integer 0-100 or nil: it takes the first valid value from the top-level keys score, assessment_score, total_score, overall_score in that order and never combines them; accepts numbers and strings (trimmed, trailing % stripped, a single decimal comma read as a point); ambiguous text such as '1,234', 'N/A' or empty is invalid; values below 0 or above 100 are invalid; a value strictly between 0 and 1 is NOT scaled and is invalid (counted separately); rounds half up. A unit test table covers each case, including a non-hash or nil responses_json."
+    acceptance: "A reader returns the score as an integer 0-100 or nil: it takes the first valid value from the top-level keys score, assessment_score, total_score, overall_score in that order and never combines them; accepts numbers and strings (trimmed, trailing % stripped, a single decimal comma read as a point); ambiguous text such as '1,234', 'N/A' or empty is invalid; a space before the percent sign is allowed; a comma followed by exactly three digits (such as '1,234') is ambiguous and invalid, while a comma followed by one or two digits is a decimal comma; booleans, objects and arrays are not numbers and are invalid; values below 0 or above 100 are invalid; 0 and 1 are valid; a value strictly between 0 and 1 is NOT scaled and is invalid (counted separately); rounds half up. A unit test table covers each case, including a non-hash or nil responses_json."
     status: active
     blocked_on: null
     decided_by: "user, 2026-11-07 (contract accepted Q-A; proportions shown as not available per T2-5 and Q-G)"
@@ -228,7 +228,7 @@ requirements:
     category: functional
     source: "user:2026-11-07"
     source_text: "we just want a few per normalisation case to eyeball accuracy"
-    acceptance: "A rake task scans assessments in batches without writing and prints, per case (valid as-is, string converted, percent stripped, decimal comma, alias key used, proportion rejected, other invalid, missing), a count and 5 examples each of assessment id, raw score token and result; it prints nothing else from the JSON; running it on the seed finishes and shows every case."
+    acceptance: "A rake task scans assessments in batches without writing and prints, per case (valid as-is, string converted, percent stripped, decimal comma, alias key used, proportion rejected, other invalid, missing), a count and 5 examples each of assessment id, raw score token and result; it prints nothing else from the JSON; a token is printed only when it is made of digits and number punctuation (dot, comma, percent sign, space, hyphen; up to 20 characters) or is a placeholder word (n/a, na, none, null, nil, tbd, unknown), passed through the PII scrubber, and otherwise as '[text, N characters]', so free text, including a short name, is never printed; running it on the seed finishes and shows every case."
     status: active
     blocked_on: null
     decided_by: "user, 2026-11-07"

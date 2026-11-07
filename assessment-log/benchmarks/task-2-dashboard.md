@@ -73,7 +73,7 @@ One employee lookup (what the N+1 repeats per row) is a primary-key index scan t
 | Pagination (page 1) | TKT-5 | 66 | 60 | 61 | 53 | page 1 of each scenario; HTML 12 KB; deep page 183 ms (below) |
 | Eager loading | TKT-6 | 49 | 42 | 44 | 4 | page 1 of each scenario; deep page 162 ms (below) |
 | Composite index | TKT-7 | 8 | 7 | 7 | 4 | page 1 of each scenario; main query 43 ms to 0.2 ms; deep page unchanged (176 ms) |
-| Score reader | TKT-8 | | | | | |
+| Score reader | TKT-8 | 7 | 6 | 6 | 4 | page 1 of each scenario; deep page 95 ms (run to run noise, no change intended); 200,000-row export median 2,552 ms (was 3,767) |
 
 ## After pagination (TKT-5, 2026-11-07)
 
@@ -191,7 +191,28 @@ Other queries (PostgreSQL execution time, warm; the eight queries are in `index-
 
 - Deep pages (the cost of offset pagination).
 - The status list in the filter form: `SELECT DISTINCT` over the company's rows, about 58 ms on a cache miss (10-minute cache); no index allowed by the spec helps it.
-- The score reader (TKT-8) is the remaining Task 2 item and changes what the Score column shows, not how fast the page is.
+- Nothing else in Task 2 is open; the score reader (TKT-8) changes what the Score column shows and did not slow the page or the export.
+
+## After the score reader (TKT-8, 2026-11-07)
+
+The reader reads the four candidate keys in SQL (`responses_json->'score'` and the three aliases) instead of loading the whole JSON or evaluating the old SQL score, then interprets them in Ruby (`ScoreReader`).
+
+| Scenario | Before (TKT-7) | After |
+|---|---|---|
+| Normal user, 2024, page 1 | 7 ms | 7 ms (6-15) |
+| Company 02, all rows, page 1 | 7 ms | 6 ms (6-13) |
+| Company 01 (largest), page 1 | 6 ms | 6 ms (6-11) |
+| Company 01, page 3,000 | 164 ms | 95 ms (93-99); not a goal, same query shape, so treat as noise |
+| SQL queries per page | 4 | 4 |
+| 200,000-row CSV export (median of 3, to a null IO) | 3,767 ms (3,496 / 3,767 / 4,002) | 2,552 ms (3,971 / 2,552 / 2,452; first run cold) |
+| `ab`, filtered page, c=1, 40 requests, warm server | 123.69 req/s (20 requests) | 157.13 req/s, 99th percentile 9 ms |
+| `ab`, c=3 | 128.50 req/s | 172.57 req/s, 99th percentile 19 ms |
+
+The two `ab` runs are not strictly comparable (20 against 40 requests, warm against first run) but show no regression. A first run on a cold server measured 76 and 170 req/s because the first request pays for code loading.
+
+- **Page 1 content:** `dashboard:snapshot` (default and `VIEW=filtered`) diffed against the baseline files: 0 differences in the date, status, employee id and email-hash columns on all 50 rows of each view; the score column changed on 19 (default) and 16 (filtered) rows, all of them the expected cases (a blank, `N/A` or out-of-range value now reads "Score not available"; `43%` reads 43; `49.99999` reads 50; `60.5` reads 61; `150` is rejected). The new snapshots are `dashboard-page1-after-score-default.txt` and `-filtered.txt`.
+- **Bullet:** with Bullet on and 40 + 40 dashboard requests, the log stayed empty (0 bytes).
+- **Report on the 500k seed:** `score-report-500k-seed.txt`, 2.8 seconds, no email or free text in the output.
 
 ## Page-1 snapshots (Req 27)
 

@@ -1,0 +1,8 @@
+rows: 500000; SQL pluck of 4 candidates: 1476 ms; Ruby reader over all rows: 883 ms
+case counts: {:valid_as_is=>277226, :missing=>52751, :rounded=>42580, :alias_key=>31973, :string_converted=>26415, :other_invalid=>26344, :proportion_rejected=>16038, :percent_stripped=>15961, :decimal_comma=>10712}
+invalid reasons: {:missing=>52751, :proportion=>16038, :not_numeric=>15817, :out_of_range=>10527}
+key used: {"score"=>372894, "assessment_score"=>16076, "total_score"=>10669, "overall_score"=>5228}
+transforms applied: {:rounded=>53292, :string_converted=>53088, :decimal_comma=>10712, :percent_stripped=>15961}
+missing by root type: {"object"=>42176, "string"=>5202, nil=>2738, "array"=>2635}
+shown with a score: 404867; not available: 95133
+largest company: pluck full responses_json 1726 ms vs 4 candidate keys 544 ms

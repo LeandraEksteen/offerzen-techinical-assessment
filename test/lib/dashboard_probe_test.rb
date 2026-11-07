@@ -13,7 +13,7 @@ class DashboardProbeTest < ActiveSupport::TestCase
   def add_rows(count)
     count.times do |n|
       employee = @company.employees.create!(name: "Person #{n}", email: "person#{n}@example.test")
-      Assessment.create!(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n, status: "pending", responses_json: { "score" => 50 + n })
+      Assessment.create!(company: @company, employee: employee, assessment_date: Date.new(2025, 1, 1) + n, status: "pending", responses_json: { "score" => 20 + n })
     end
   end
 
@@ -25,7 +25,7 @@ class DashboardProbeTest < ActiveSupport::TestCase
 
     assert_equal 50, lines.size
     assert_equal lines, probe.snapshot("/dashboard")
-    assert lines.first.match?(/\A\d+ \| 2025-03-01 \| "pending" \| "109" \| \h{8}\z/), "unexpected first line: #{lines.first}"
+    assert lines.first.match?(/\A\d+ \| 2025-03-01 \| "pending" \| "79" \| \h{8}\z/), "unexpected first line: #{lines.first}"
     assert_no_match(/example\.test|@/, lines.join("\n"))
   end
 

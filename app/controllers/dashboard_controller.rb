@@ -2,10 +2,11 @@
 # performance work had a real "before" to measure against. Each later ticket
 # fixes one thing, with measured numbers (assessment-log/benchmarks):
 #   - pagination: 50 rows per page, Previous and Next only
-#   - eager loading (this change): the page's employees come in one query (id and
+#   - eager loading: the page's employees come in one query (id and
 #     email only) instead of one query per row
-#   - still the baseline until their tickets: the score is shown exactly as stored,
-#     and without an index the database scans the whole company for each page.
+#   - index on (company_id, assessment_date): the database reads only the rows of the page
+#   - score reader (this change): the Score column shows what ScoreReader reads, or
+#     "Score not available"; only the columns the page shows are loaded.
 class DashboardController < ApplicationController
   PAGE_SIZE = 50
   # Anything that is not a whole number from 1 to this limit shows page 1. The limit
@@ -24,6 +25,7 @@ class DashboardController < ApplicationController
     rows = current_company.assessments
                           .matching(date_from: @filters.date_from, date_to: @filters.date_to, status: @filters.status)
                           .order(assessment_date: :desc, id: :desc)
+                          .select(:id, :employee_id, :assessment_date, :status).with_score_candidates
                           .preload(:employee_for_listing)
                           .offset((@page - 1) * PAGE_SIZE)
                           .limit(PAGE_SIZE + 1)

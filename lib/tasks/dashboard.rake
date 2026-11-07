@@ -42,3 +42,10 @@ namespace :dashboard do
     puts "# sha256 #{Digest::SHA256.hexdigest(lines.join("\n"))}"
   end
 end
+
+namespace :scores do
+  desc "Read-only report: how many rows fall into each score case, which rules were needed, scrubbed examples (BATCH=10000)"
+  task report: :environment do
+    ScoreReport.new(batch: ENV.fetch("BATCH", ScoreReport::BATCH).to_i).call
+  end
+end

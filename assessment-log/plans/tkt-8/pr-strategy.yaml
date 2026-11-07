@@ -1,0 +1,67 @@
+schema_version: 1
+key: TKT-8
+title: "Task 2: score reader, shared by dashboard and export, plus score report"
+jira: assessment-log/tickets/TKT-8.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-8 | Task 2: score reader, shared by dashboard and export, plus score report"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-8/score-reader
+    stack: rails
+    implements: []
+    role: none
+    requirements: [14, 15, 16, 17, 18, 19, 20, 28]
+    scope:
+      - app/services/
+      - app/models/assessment.rb
+      - app/helpers/
+      - app/controllers/dashboard_controller.rb
+      - app/views/dashboard/
+      - lib/score_report.rb
+      - lib/tasks/
+      - test/
+      - assessment-log/
+    changes: |
+      Add ScoreReader, the documented contract for reading a score out of responses_json: the first valid
+      value among the top-level keys score, assessment_score, total_score and overall_score, parsing numbers
+      and strings (trimmed, percent sign stripped, a single decimal comma read as a point), refusing
+      ambiguous text, values outside 0 to 100 and values strictly between 0 and 1, rounding half up, and
+      never raising. The four candidate values are read in SQL from one list of keys, so free text never
+      reaches Ruby and the dashboard stops loading the large responses_json column. The dashboard shows
+      "Score not available" when there is no valid score; the export leaves the cell blank; both use the same
+      reader. A read-only report task prints per-case counts with scrubbed examples, and per-rule counts so
+      unused rules can be deleted. Stored data is never written.
+    stubs: none
+    tests:
+      - "UT-1 [positive] the contract table: every shape in the seed maps to the agreed score or to nothing"
+      - "UT-2 [positive] key order and first valid value: a later key is used when an earlier one is invalid; values are never combined"
+      - "UT-3 [positive] strings: trimmed, percent sign stripped, a space before it allowed, a decimal comma read as a point; N/A, empty, text, and a comma followed by three digits are invalid"
+      - "UT-4 [edge] range and proportion: 0, 1 and 100 are valid; below 0, above 100 and strictly between 0 and 1 are invalid with their own reasons"
+      - "UT-5 [edge] rounding is half up: 84.5 gives 85, 84.4999 gives 84, 84.99999 gives 85, the string 84,5 gives 85"
+      - "UT-6 [edge] the reader never raises: nil, arrays, objects, booleans, huge numbers and non-object roots give no score"
+      - "UT-7 [positive] the outcome names the key used, the rules applied and the reason for no score"
+      - "UT-8 [positive] each rule is a separate unit: a reader built without one rule changes only what that rule did"
+      - "UT-9 [positive] the dashboard shows Score not available for every invalid or missing shape and the normalised value otherwise; status does not matter"
+      - "UT-10 [positive] the export's score cell comes from the same reader and agrees with the dashboard for every shape; unavailable is blank"
+      - "UT-11 [negative] a reader that raises on one row is rescued: the page returns 200, that row shows Score not available, and the log has only the error class and the assessment id"
+      - "UT-12 [positive] responses_json is unchanged after the dashboard, the export and the report have run"
+      - "UT-13 [positive] the report prints per-case counts and at most 5 examples per case with scrubbed or described tokens, per-rule counts, no emails, and writes nothing"
+      - "UT-14 [positive] loading the dashboard leaves no emails, response content or raw score values in the captured log"
+      - "UT-15 [positive] neither the dashboard nor the export queries the whole responses_json: only the candidate keys leave the database"
+      - "UT-16 [edge] the SQL for the candidate keys is generated from the single list of keys"
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: "Not deployed anywhere in this exercise. Read-time only, so reverting the change restores the previous display with no data to repair."
+manual_checks:
+  - "MC-1 [manual] local: run the report on the 500k seed; counts must match the plan's experiment; record the output"
+  - "MC-2 [manual] local: dashboard:snapshot for both views against the baseline snapshots: only the score column differs, and only on the expected rows; record the counts"
+  - "MC-3 [manual] local: benchmark after the change and time the 200,000-row export (3.8 s before); append the row"
+  - "MC-4 [manual] local: in the browser check Score not available, a normalised percent and comma score, and an alias-key score on the dashboard"
+  - "MC-5 [manual] local: Bullet log stays empty; ab load test repeated"
+conflict_risks: []
