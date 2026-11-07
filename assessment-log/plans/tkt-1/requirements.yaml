@@ -1,0 +1,57 @@
+---
+schema_version: 1
+key: TKT-1
+origin: to-agent-spec
+jira_updated: '2026-11-07T08:28:15Z'
+requirements:
+- id: 1
+  summary: A minimal data model exists so the tasks can run on it
+  category: data-contract
+  source: prd:OfferZen assignment PDF §Context
+  source_text: 'Assume entities roughly include: companies, employees (belong to a
+    company), and assessments (belong to an employee and company) with fields such
+    as company_id, employee_id, employee_email, status, responses_json, created_at.'
+  acceptance: Database has companies, employees (company_id), assessments (company_id,
+    employee_id, employee_email, status text nullable, responses_json jsonb, assessment_date
+    date NOT NULL, created_at, updated_at) and admins (company_id, email, password
+    digest); schema loads and the test suite boots.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07 (assessment_date added in T1-3/T1-10)
+  supersedes:
+  domain: scaffold
+  risk:
+  - pii
+- id: 2
+  summary: Company admins sign in with a plain email and password form; company comes
+    only from the signed-in admin
+  category: functional
+  source: user:2026-11-07
+  source_text: Yes we can do table form log in, I meant let's not go full third party
+    login
+  acceptance: Signing in with a seeded admin works; no third-party login exists; every
+    export and dashboard request derives the company from the signed-in admin, never
+    from a request parameter; unauthenticated requests are redirected to sign-in.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: auth
+  risk:
+  - permissions
+- id: 3
+  summary: Seed data is large and deliberately messy
+  category: operational
+  source: user:2026-11-07
+  source_text: We already know we're talking 100's of thousands of records
+  acceptance: A seed task creates about 500,000 assessments across about 20 companies,
+    one company holding about 200,000; statuses include nil, empty string, blank-only,
+    'n/a', complete, comp, done, pending, in_progress, needs_follow_up, archived and
+    mixed case/whitespace variants; responses_json includes every score shape named
+    in Req 15 plus free text; counts verifiable with a query.
+  status: active
+  blocked_on:
+  decided_by: user, 2026-11-07
+  supersedes:
+  domain: scaffold
+  risk: []

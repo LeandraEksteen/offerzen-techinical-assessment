@@ -74,3 +74,11 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **Backfill (plan only):** Build a Google sheet of distinct status values with counts and latest `updated_at`, map them to the five values with assessors confirming doubtful ones, and keep the approved mapping as a versioned file. Add a nullable column, write both columns, backfill in batches, and verify 100% before switching. Switch with an alias, keep the legacy column written, then rename in a short low-traffic window with maintenance mode and a backup taken right before. Drop `legacy_status` later.
 - **Rationale:** Rollback is a deploy or a reverse rename, not a full restore, and rows written meanwhile stay safe. The rename avoids permanent tech debt and other readers of the column keep working.
 - **Defaults and safeguards:** A new assessment without a status defaults to `pending`. The large-table safeguards are agreed, with pause thresholds of replication lag over 5 seconds, any lock wait over 2 seconds, or request latency over 1.5 times baseline.
+
+## D-019: Scaffold choices (TKT-1)
+- **Employee email:** `employees` has its own `email` in addition to the brief's denormalised `assessments.employee_email`. Task 2's baseline needs a page that reads the employee record to show the N+1.
+- **No indexes on assessments:** the table is created with only a primary key (foreign keys without indexes) so the Task 2 baseline reflects a legacy table. The composite index arrives in its own ticket.
+- **bcrypt:** enabled for `has_secure_password`, with rate limiting on sign-in.
+- **Seed layout:** `db/seeds.rb` stays small because `bin/ci` runs `db:seed:replant` in the test environment. The 500,000-row dataset is a separate task, `assessments:seed`, deterministic and refusing to run in production. It silences SQL logging so no emails or responses reach the log.
+- **Dev sign-in:** seeded admins use a documented development password from `SEED_ADMIN_PASSWORD` (default in the seeder), never used outside seeding.
+

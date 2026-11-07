@@ -1,0 +1,13 @@
+<h1>Sign in</h1>
+
+<%= form_with url: session_path do |form| %>
+  <p>
+    <%= form.label :email %>
+    <%= form.email_field :email, required: true, autofocus: true, autocomplete: "username" %>
+  </p>
+  <p>
+    <%= form.label :password %>
+    <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+  </p>
+  <%= form.submit "Sign in" %>
+<% end %>

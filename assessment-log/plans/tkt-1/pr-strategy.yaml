@@ -1,0 +1,53 @@
+schema_version: 1
+key: TKT-1
+title: "Scaffold: data model, admin sign-in, large messy seed data"
+jira: assessment-log/tickets/TKT-1.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-1 | Scaffold: data model, admin sign-in, large messy seed data"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-1/scaffold-data-model-signin-seed
+    stack: rails
+    implements: []
+    role: none
+    requirements: [1, 2, 3]
+    scope:
+      - Gemfile
+      - Gemfile.lock
+      - app/models/
+      - app/controllers/
+      - app/views/
+      - config/routes.rb
+      - db/
+      - lib/
+      - test/
+      - assessment-log/
+    changes: |
+      Add bcrypt; migrations and models for companies, employees, assessments and admins;
+      sign-in/sign-out and a placeholder home page for signed-in admins (company from the
+      session only); small db/seeds.rb; a separate rake task that seeds about 500,000 messy
+      assessments; tests; log, ticket and decision updates.
+    stubs: none
+    tests:
+      - UT-1 [positive] models and associations load; assessment_date required; status and responses_json nullable
+      - UT-2 [negative] assessment without assessment_date or company is invalid; admin email unique and requires company
+      - UT-3 [positive] valid sign-in stores the admin in the session and the home page shows the admin's company
+      - UT-4 [negative] wrong password creates no session
+      - UT-5 [negative] unauthenticated request is redirected to sign-in
+      - UT-6 [edge] a company_id parameter for another company does not change the company shown
+      - UT-7 [positive] seed generator at small size creates the requested counts across companies with one dominant company, and every dirty status and score shape appears
+      - UT-8 [edge] seeding refuses to run in production
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Not deployed anywhere in this exercise; merging to main only.
+manual_checks:
+  - "MC-1 [manual] local: run the 500k seed task; query counts per company and the status and score distributions; record time taken in the PR"
+  - "MC-2 [manual] local: sign in through the browser as a seeded admin; sign out; confirm redirect when signed out"
+  - "MC-3 [manual] local: `RAILS_ENV=test bin/rails db:seed:replant` (what bin/ci runs) finishes in seconds"
+conflict_risks: []
