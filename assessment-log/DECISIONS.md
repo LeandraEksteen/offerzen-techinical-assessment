@@ -129,3 +129,10 @@ Format: ID, decision, context, rationale. Newest at the bottom.
 - **Failure behaviour:** a row that fails shows "Score not available" and logs only the error class and assessment id; the page stays 200.
 - **The report prints no free text:** a token is shown only if it is digits and number punctuation or a placeholder word such as N/A, else `[text, N characters]` (Req 19 amended). On the 500k seed 81.0% of rows show a score; the real data should be checked with a masked production copy before trusting the rules.
 
+## D-027: The free-text status screen is a deliberate baseline (TKT-9)
+- **Why it exists:** Req 41 asks for a before (free text) and an after (validated dropdown), both in git history. This ticket is the before: whatever is typed is stored exactly as typed, including blank. TKT-10 replaces the field and adds validation (Req 29).
+- **Tenancy and access:** the assessment is looked up only through the signed-in admin's company; another company's id is a 404 (does not reveal the row exists). Existing sign-in, no new role.
+- **Minimal data:** the form loads only ids, date and status. No employee email on the page, `responses_json` never read (tested at the SQL level).
+- **Filter list:** saving forgets the company's cached status list so the new value shows in the filter at once.
+- **Accepted for now:** `status` is not filtered from request logs (the formatter masks email-shaped text only) and the field has no length cap; both end when TKT-10 limits the value to five options.
+

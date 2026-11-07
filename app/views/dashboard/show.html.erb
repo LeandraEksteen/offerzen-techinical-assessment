@@ -41,6 +41,7 @@
         <th>Assessment date</th>
         <th>Status</th>
         <th>Score</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -51,6 +52,7 @@
           <td><%= assessment.assessment_date %></td>
           <td><%= assessment.status %></td>
           <td><%= displayed_score(assessment) %></td>
+          <td><%= link_to "Edit status", edit_assessment_path(assessment) %></td>
         </tr>
       <% end %>
     </tbody>

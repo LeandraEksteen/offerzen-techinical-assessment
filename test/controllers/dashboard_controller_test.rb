@@ -39,10 +39,22 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get dashboard_url
 
     assert_response :success
-    assert_equal [ "Employee email", "Employee id", "Assessment date", "Status", "Score" ], css_select("thead th").map(&:text)
+    assert_equal [ "Employee email", "Employee id", "Assessment date", "Status", "Score", "Actions" ], css_select("thead th").map(&:text)
     assert_equal 1, table_rows.size
     assert_equal [ mine.employee.email, mine.employee_id.to_s, mine.assessment_date.to_s, "pending" ], table_rows.first.first(4)
     assert_no_match(/secret-b-status/, response.body)
+  end
+
+  # TKT-9 UT-10
+  test "every row links to its status edit form" do
+    first = add_assessment(status: "pending")
+    second = add_assessment(status: "done")
+    sign_in_as @admin
+
+    get dashboard_url
+
+    links = css_select("tbody tr td a").map { |link| [ link.text, link["href"] ] }
+    assert_equal [ [ "Edit status", edit_assessment_path(second) ], [ "Edit status", edit_assessment_path(first) ] ].sort, links.sort
   end
 
   # UT-2

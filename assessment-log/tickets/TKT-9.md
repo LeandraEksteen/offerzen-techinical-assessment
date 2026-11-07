@@ -2,7 +2,7 @@
 key: TKT-9
 type: Task
 title: Task 3: assessor status screen, free-text baseline
-status: To Do
+status: In Review
 parent: EPIC-1
 updated: 2026-11-07T08:28:15Z
 ---
@@ -30,3 +30,4 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: `AssessmentsController` (edit, update; lookup via the signed-in admin's company, 404 otherwise), free-text form, "Edit status" link per dashboard row, `StatusOptions.forget`. Tests UT-1 to UT-10; 164 runs, 0 failures; rubocop, brakeman, bundler-audit clean. Manual checks MC-1 and MC-2 (browser) not yet run.
