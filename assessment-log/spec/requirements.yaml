@@ -1,0 +1,540 @@
+schema_version: 1
+key: null
+origin: to-agent-spec
+jira_updated: null
+requirements:
+  # ---------- Scaffold (inferred from the tasks; the repo has no domain code) ----------
+  - id: 1
+    summary: A minimal data model exists so the tasks can run on it
+    category: data-contract
+    source: "prd:OfferZen assignment PDF §Context"
+    source_text: "Assume entities roughly include: companies, employees (belong to a company), and assessments (belong to an employee and company) with fields such as company_id, employee_id, employee_email, status, responses_json, created_at."
+    acceptance: "Database has companies, employees (company_id), assessments (company_id, employee_id, employee_email, status text nullable, responses_json jsonb, assessment_date date NOT NULL, created_at, updated_at) and admins (company_id, email, password digest); schema loads and the test suite boots."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (assessment_date added in T1-3/T1-10)"
+    supersedes: null
+    domain: scaffold
+    risk: [pii]
+  - id: 2
+    summary: Company admins sign in with a plain email and password form; company comes only from the signed-in admin
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "Yes we can do table form log in, I meant let's not go full third party login"
+    acceptance: "Signing in with a seeded admin works; no third-party login exists; every export and dashboard request derives the company from the signed-in admin, never from a request parameter; unauthenticated requests are redirected to sign-in."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: auth
+    risk: [permissions]
+  - id: 3
+    summary: Seed data is large and deliberately messy
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "We already know we're talking 100's of thousands of records"
+    acceptance: "A seed task creates about 500,000 assessments across about 20 companies, one company holding about 200,000; statuses include nil, empty string, blank-only, 'n/a', complete, comp, done, pending, in_progress, needs_follow_up, archived and mixed case/whitespace variants; responses_json includes every score shape named in Req 15 plus free text; counts verifiable with a query."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: scaffold
+    risk: []
+  # ---------- Task 1: company-scoped CSV export ----------
+  - id: 4
+    summary: An admin can export assessments for their own company only
+    category: business-rule
+    source: "prd:OfferZen assignment PDF §Task 1"
+    source_text: "A company admin can export assessments for their own company only."
+    acceptance: "A test with two companies shows admin A's export contains only company A rows; a request carrying a company_id parameter for company B still exports company A; a download link for company A's export returns 404 for admin B."
+    status: active
+    blocked_on: null
+    decided_by: "brief; user, 2026-11-07"
+    supersedes: null
+    domain: export
+    risk: [permissions, pii]
+  - id: 5
+    summary: Export filters are exactly two - assessment date range and status
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "For an assessment I would assume there would be a created_date and an assessment_date ... So let's have the filter work on assessment date"
+    acceptance: "The export form has only a date range (on assessment_date, inclusive, whole UTC days, either end optional) and a status select; blank status means all; an invalid date or an unknown status returns 422 with a plain message and creates no export; there is no row cap."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: "my proposed filter on created_at"
+    domain: export
+    risk: []
+  - id: 6
+    summary: The status select lists the distinct statuses stored for the admin's own company, grouped without changing data
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "Unique per company records as per the admin logged in, so not the entire table, just the relevant records. also it would be fine to group to whitespace strip and case insensitive"
+    acceptance: "For a company whose rows hold 'Complete', 'complete ' and 'COMPLETE' the select shows one option labelled 'complete' that filters all three; nil, empty string and blank-only share one option '(no status)' that filters all of them; 'n/a' is its own option; options come only from the admin's company; the list is cached for 10 minutes per company; no stored status is modified."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: "my proposed alias map shared with Task 3"
+    domain: export
+    risk: []
+  - id: 7
+    summary: Export runs asynchronously with a history table on the download page
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "The user selects the filters and clicks download. After a second or two the page auto refreshes Then there is a 'history' table on the download page"
+    acceptance: "Clicking download creates a history row with status 'in progress' and the page refreshes within about 2 seconds to show it plus a message to refresh in a few minutes; a background job builds the file in batches; when done the row shows 'ready' with a download link; the history lists the 20 most recent exports of the admin's own company; no polling or global banner exists."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: "my recommendation of streaming"
+    domain: export
+    risk: []
+  - id: 8
+    summary: Exported columns are an allow-list that leaves out personal identifiers and free text
+    category: business-rule
+    source: "prd:OfferZen assignment PDF §Task 1"
+    source_text: "The exported file excludes or redacts fields that should not leave the system in raw form (for example, free text answers and personal identifiers)."
+    acceptance: "The CSV header is exactly assessment_id, assessment_date, created_at, status (raw stored value), score, employee_id; a test asserts no employee_email, free-text answer or raw responses_json content appears; any cell starting with =, +, - or @ is neutralised against formula injection."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (columns accepted in T1-2, T1-10)"
+    supersedes: null
+    domain: export
+    risk: [pii]
+  - id: 9
+    summary: Until Task 2 ships, the export reads only the top-level score key and emits it only if it is a JSON number
+    category: edge-case
+    source: "user:2026-11-07"
+    source_text: "so are we gonna assume for task one we only read {score:10} in task 1 with no normalisation right?"
+    acceptance: "Rows whose responses_json has numeric score export that number; rows with a string, null, missing key or non-object JSON export a blank score; no free text can reach the score column."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: export
+    risk: [pii]
+  - id: 10
+    summary: Export failure, duplicate-click and retention behaviour
+    category: edge-case
+    source: "user:2026-11-07"
+    source_text: "T1-8 Yes exactly"
+    acceptance: "A job error sets the row to 'failed' with the generic text 'Export failed, please try again' and no data or technical detail in the UI or logs; there is no automatic retry; a second click while one is in progress shows 'an export is already in progress' and creates nothing; files older than 7 days are deleted and their row shows 'expired'."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: export
+    risk: [state-transition]
+  - id: 11
+    summary: Finished files are stored through Active Storage as plain CSV; production would use S3-style storage
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "Exactly - final product would be S3 or some other file sharing system"
+    acceptance: "Files are attached via Active Storage on local disk in dev and test; SOLUTION.md states that production needs S3-style storage because the local disk is ephemeral on a Heroku-like host; the file is not zipped."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: "option of emailing the CSV"
+    domain: export
+    risk: []
+  # ---------- Cross-cutting: PII scrubbing and log hygiene ----------
+  - id: 12
+    summary: One PII scrubbing service covers exports, logs and error logs
+    category: business-rule
+    source: "user:2026-11-07"
+    source_text: "We should make a service that scrubs PII from any and all models - this is for export and logs/error logs"
+    acceptance: "Each model declares its PII attributes once (for example employee_email, responses_json); that declaration drives the Rails parameter filter, inspect output and a formatter that redacts those values in logs and error logs; export rows pass through it as a second guard; background-job arguments carry ids only."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: logging
+    risk: [pii]
+  - id: 13
+    summary: Export and dashboard requests leave no sensitive values in logs
+    category: operational
+    source: "prd:OfferZen assignment PDF §Task 1"
+    source_text: "Avoid exposing sensitive values in logs related to this feature."
+    acceptance: "After a scripted run of an export (including a failing one) and dashboard loads with filters, the captured log and error output contains no employee email, response content or raw score value (checked by a test that greps the captured log)."
+    status: active
+    blocked_on: null
+    decided_by: "brief; user, 2026-11-07"
+    supersedes: null
+    domain: logging
+    risk: [pii]
+  - id: 14
+    summary: Task 2 logging in the dashboard area reduces sensitive information written to logs
+    category: operational
+    source: "prd:OfferZen assignment PDF §Task 2"
+    source_text: "Reduce the chance of sensitive information being written to logs in this area."
+    acceptance: "Dashboard request logs show the filter parameter names but not employee email or score values; satisfied by the same test as Req 13 run against the dashboard."
+    status: active
+    blocked_on: null
+    decided_by: "brief; user, 2026-11-07"
+    supersedes: null
+    domain: logging
+    risk: [pii]
+  # ---------- Task 2: score and dashboard ----------
+  - id: 15
+    summary: Score contract - how the score is read from responses_json
+    category: data-contract
+    source: "user:2026-11-07"
+    source_text: "we'll have to make an educated guess/assumption and stick with it"
+    acceptance: "A reader returns the score as an integer 0-100 or nil: it takes the first valid value from the top-level keys score, assessment_score, total_score, overall_score in that order and never combines them; accepts numbers and strings (trimmed, trailing % stripped, a single decimal comma read as a point); ambiguous text such as '1,234', 'N/A' or empty is invalid; values below 0 or above 100 are invalid; a value strictly between 0 and 1 is NOT scaled and is invalid (counted separately); rounds half up. A unit test table covers each case, including a non-hash or nil responses_json."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (contract accepted Q-A; proportions shown as not available per T2-5 and Q-G)"
+    supersedes: "my first proposal that scaled proportions (0.85 to 85)"
+    domain: score
+    risk: []
+  - id: 16
+    summary: The dashboard shows 'Score not available' when no valid score exists, and status never gates the score
+    category: edge-case
+    source: "user:2026-11-07"
+    source_text: "I would rather the user see 'score not available' than an error screen cause of a nil error"
+    acceptance: "A dashboard row with an invalid or missing score renders 'Score not available' (CSV: blank) and the page returns 200; a pending and a completed row with the same valid score both show it; the reader never raises - an unexpected error in one row is rescued, logged with only the error class and assessment id, and that row shows 'Score not available'; there is no footnote saying scores are normalised."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: "earlier agreement to show a dash; my proposed 'may differ' footnote"
+    domain: score
+    risk: []
+  - id: 17
+    summary: Score normalisation is read-time only; stored data is never rewritten
+    category: business-rule
+    source: "user:2026-11-07"
+    source_text: "The user could be seeing something different than what is in the db due to our normalisation, it's an important call out"
+    acceptance: "No code path writes to responses_json; a test records responses_json before and after loading the dashboard and running the export and report and finds it unchanged."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: score
+    risk: [pii]
+  - id: 18
+    summary: The score contract and its assumptions are documented where the next developer will see them
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "So ensure this approach is summarised as comments in the code for the next dev to see."
+    acceptance: "The score reader file begins with a comment block stating the key order, parsing rules, range rule and limitations; SOLUTION.md has a section stating plainly that the data shape is unknown, listing each assumption and the known legacy issues covered, noting that displayed scores can differ from stored data, and naming a masked production copy as the ideal validation."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: score
+    risk: []
+  - id: 19
+    summary: A read-only score report shows counts and a few examples per normalisation case
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "we just want a few per normalisation case to eyeball accuracy"
+    acceptance: "A rake task scans assessments in batches without writing and prints, per case (valid as-is, string converted, percent stripped, decimal comma, alias key used, proportion rejected, other invalid, missing), a count and 5 examples each of assessment id, raw score token and result; it prints nothing else from the JSON; running it on the seed finishes and shows every case."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: score
+    risk: [pii]
+  - id: 20
+    summary: Each score rule is a small removable unit
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "once we see the data we can remove the 'rules' that are not applicable to this dataset and simplify it more"
+    acceptance: "Each rule (key alias, percent strip, decimal comma, range, proportion) is a separate small unit with its own test; the report counts hits per rule; deleting one rule and its test leaves the others passing."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: score
+    risk: []
+  - id: 21
+    summary: The dashboard is one company-scoped table with date and status filters
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "yes I think so. maybe use email instead of name as an identifier?"
+    acceptance: "The page lists only the signed-in admin's company assessments with columns employee email, employee id, assessment date, status, score; its date and status filters use the same semantics as Req 5 and Req 6; it is visible only to signed-in admins."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: "my proposal to show employee name"
+    domain: dashboard
+    risk: [pii, permissions]
+  - id: 22
+    summary: A baseline legacy dashboard and a benchmark method are fixed before any change
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "Before even thinking of what to improve we need to agree what we're assuming and how we're benchmarking"
+    acceptance: "A first change adds the unpaginated dashboard with an N+1 on employees; measurements on the 500k seed using Bullet, rack-mini-profiler, EXPLAIN ANALYZE and a simple load test (hey or k6) are recorded as numbers before any improvement; staging, production and APM measurement are described in SOLUTION.md only."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: performance
+    risk: []
+  - id: 23
+    summary: Pagination - 50 rows per page, no total count, safe parameters, stable order
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "Then assuming we don't already have pagination that's the first thing to add that could add instant value"
+    acceptance: "The dashboard shows 50 rows per page with Previous and Next only (next detected by fetching one extra row); page values like abc, -1 or past the last page show page 1 or an empty last page with status 200; order is assessment_date descending then id descending; filters survive in page links; measured time and query count before and after are recorded."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07; Q-I agreed"
+    supersedes: null
+    domain: performance
+    risk: []
+  - id: 24
+    summary: Eager loading removes the N+1 on employees
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "Eager loading is something bullet would also show"
+    acceptance: "Bullet reports no N+1 on the dashboard; the query count for a page is constant regardless of rows; only the employee columns the page needs are loaded; before and after numbers are recorded."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: performance
+    risk: []
+  - id: 25
+    summary: A composite index supports the dashboard and export date filter without blocking writes
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "And then assuming once again we don't have any indexes adding to the filter fields company id, status, assessment_date is the logical next step"
+    acceptance: "One index on (company_id, assessment_date) is created CONCURRENTLY with the migration transaction disabled; a check confirms the index is valid; EXPLAIN ANALYZE before and after shows the change in plan and time; no separate status index is added; rollback is dropping the index concurrently."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07; Q-I agreed"
+    supersedes: "user's first suggestion of indexes on company_id, status and assessment_date separately"
+    domain: performance
+    risk: []
+  - id: 26
+    summary: Performance changes ship one at a time, each with measured results
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "No changing things and saying 'it feels faster'"
+    acceptance: "Baseline, pagination, eager loading, index and the score reader are separate changes, each revertible alone; each records before and after numbers (time and query count); SOLUTION.md has the before/after note and why each step was chosen; no claim in the docs lacks a number."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: performance
+    risk: []
+  - id: 27
+    summary: The page keeps working through each change
+    category: edge-case
+    source: "prd:OfferZen assignment PDF §Task 2"
+    source_text: "Keep the page working while you improve it."
+    acceptance: "Before and after each change, page 1 of the seeded big company shows the same rows in the same order with the same values (apart from scores fixed by the score reader); the page returns 200 for every status and date filter combination in the seed."
+    status: active
+    blocked_on: null
+    decided_by: "brief; user, 2026-11-07"
+    supersedes: null
+    domain: dashboard
+    risk: []
+  - id: 28
+    summary: Task 2 export and dashboard share the contract score reader
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "Task 1 ships the score using a minimal read ... Task 2 swaps in the contract reader"
+    acceptance: "After Task 2, the export score column and the dashboard score come from the same reader; for every seeded row the two agree; the export shows a blank where the dashboard shows 'Score not available'."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (Q-D)"
+    supersedes: "Req 9 behaviour"
+    domain: score
+    risk: []
+  # ---------- Task 3: status normalisation ----------
+  - id: 29
+    summary: Ruby-side validation allows only the five canonical statuses, on create and when status changes
+    category: business-rule
+    source: "user:2026-11-07"
+    source_text: "we should rather prevent any non standard value being written on the ruby side"
+    acceptance: "Canonical values are pending, in_progress, completed, needs_follow_up, archived; saving a record with any other value (including case or whitespace variants of them) fails validation with a clear message; the check runs only when status is being set, so updating another field on a legacy row with a dirty status still succeeds; there is no alias mapping on write."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-E accepted)"
+    supersedes: "my proposal to map known aliases on write"
+    domain: status
+    risk: [state-transition]
+  - id: 30
+    summary: A database check constraint on status is not added
+    category: out-of-scope
+    source: "user:2026-11-07"
+    source_text: "Yes. Its not the db's responsibility"
+    acceptance: "No CHECK constraint on status exists in any migration; an optional check on the clean column after cutover is listed as future work."
+    status: dropped
+    blocked_on: "dropped: user, 2026-11-07, it is not the database's responsibility"
+    decided_by: "user, 2026-11-07 (T3-B)"
+    supersedes: "my NOT VALID check proposal"
+    domain: status
+    risk: [state-transition]
+  - id: 31
+    summary: Historical mapping comes from a reviewed sheet of distinct values, stored as a versioned file
+    category: business-rule
+    source: "user:2026-11-07"
+    source_text: "make a google sheet with all the status values currently in the table for all records and try to map them to the new standard values. where in doubt we'll pull in the assessors"
+    acceptance: "SOLUTION.md describes the sheet (only distinct status values with a row count and latest updated_at, never rows or ids, scanned for free text before sharing), assessor confirmation for doubtful values, and a versioned mapping file in the repo used by the backfill; the author's draft aliases are only a starting guess; a value without an approved mapping stays NULL in the new column and blocks the switch."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-D accepted)"
+    supersedes: null
+    domain: status
+    risk: [state-transition]
+  - id: 32
+    summary: Rollback keeps the legacy column written; backup right before the rename; full restore is the last resort
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "Exactly. Obviously we would still do a backup right before the rename just in case"
+    acceptance: "SOLUTION.md states the legacy column keeps receiving the canonical value after the alias switch until it is dropped; rollback is a code deploy before the rename and the reverse rename after it; a pg:backups:capture is taken immediately before the rename; restoring a backup is described as the last resort because it loses later writes."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-H accepted)"
+    supersedes: "my side-table proposal"
+    domain: status
+    risk: [state-transition]
+  - id: 33
+    summary: A read-only status report ships; nothing in the repo updates historical statuses
+    category: functional
+    source: "prd:OfferZen assignment PDF §Task 3"
+    source_text: "Design, but do not fully execute, a plan to bring historical records into alignment."
+    acceptance: "A rake task reads in batches without writing and prints one row per distinct status value (as stored) with a count and the latest updated_at; once a mapping file exists it also prints counts per mapped result and the number of unmapped values; the code contains no path that updates historical statuses."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-G accepted)"
+    supersedes: null
+    domain: status
+    risk: [state-transition]
+  - id: 34
+    summary: SOLUTION.md has the step-by-step release and rollback plan for a Heroku-like host
+    category: operational
+    source: "prd:OfferZen assignment PDF §Task 3"
+    source_text: "provide a step by step release and rollback plan suitable for a Heroku like environment, including how you would capture a database backup before the change and how you would recover if needed."
+    acceptance: "The plan lists in order: (1) add a nullable column (instant) and deploy code writing both columns; (2) backfill in batches of about 5,000 ids from a one-off dyno, throttled, resumable, idempotent; (3) verify 100% filled and no unmapped; (4) switch the app to the new column with an alias; (5) keep writing the legacy column; (6) rename in a short low-traffic window with Heroku maintenance mode, both renames in one transaction under a short lock_timeout, then deploy code using plain status; (7) drop legacy_status later. Steps 1 to 4 and the report are labelled live-safe; step 6 is labelled low-traffic window; each step has its rollback and a backup is captured before step 6."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-H accepted)"
+    supersedes: null
+    domain: status
+    risk: [state-transition]
+  - id: 35
+    summary: README, SOLUTION.md and a demo outline are delivered
+    category: operational
+    source: "prd:OfferZen assignment PDF §Deliverables"
+    source_text: "A README.md with instructions to run locally. A SOLUTION.md describing the design and trade-offs you made."
+    acceptance: "A fresh clone follows the README to a running app, including setting PGPORT (database.yml defaults to 5433), seeding and running the job worker; SOLUTION.md covers design, trade-offs, the async choice, the score assumptions, benchmarks and the Task 3 plan; a demo walkthrough outline exists in assessment-log/."
+    status: active
+    blocked_on: null
+    decided_by: "brief; user, 2026-11-07"
+    supersedes: null
+    domain: deliverables
+    risk: []
+  - id: 36
+    summary: TypeScript stays minimal - a small export form with feedback
+    category: functional
+    source: "prd:OfferZen assignment PDF §Scope control"
+    source_text: "Keep TypeScript truly minimal (small UI to trigger export and show basic feedback)."
+    acceptance: "TypeScript is limited to the export form behaviour (submit, show 'in progress', refresh after about 2 seconds, show errors); yarn typecheck passes; no other TypeScript features exist."
+    status: active
+    blocked_on: null
+    decided_by: "brief; user, 2026-11-07"
+    supersedes: null
+    domain: export
+    risk: []
+  # ---------- Out of scope ----------
+  - id: 37
+    summary: Emailing the CSV is not in V1
+    category: out-of-scope
+    source: "user:2026-11-07"
+    source_text: "with email as a nice to have we can discuss if there is a need"
+    acceptance: "No code sends the export by email; revisit only if the author asks."
+    status: out-of-scope
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: export
+    risk: []
+  - id: 38
+    summary: No insecure legacy export is built
+    category: out-of-scope
+    source: "user:2026-11-07"
+    source_text: "T1-6 Yes. agreed"
+    acceptance: "SOLUTION.md describes the legacy behaviour from the brief and which control addresses each point; no endpoint accepts a company identifier."
+    status: out-of-scope
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: export
+    risk: []
+  - id: 39
+    summary: Polling, a global done-banner, status-based score gating or alerts, and staging or production measurement are future work
+    category: out-of-scope
+    source: "user:2026-11-07"
+    source_text: "Once we've normalised the statuses we can maybe look at gating/adding an alert/error log or something - make a note for future development"
+    acceptance: "SOLUTION.md has a Future work section naming these; none is implemented."
+    status: out-of-scope
+    blocked_on: null
+    decided_by: "user, 2026-11-07"
+    supersedes: null
+    domain: other
+    risk: []
+
+  - id: 40
+    summary: A change request with a cut-over date prepares assessors; before the date the app only counts would-be rejections
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "in real life we would make a Change Request/Brief for the assessors with a cut over date. So they would be prepared."
+    acceptance: "SOLUTION.md outlines the change request (what changes, the dropdown, the cut-over date, who to contact); a configured cut-over date makes Req 29 log a count of would-be rejections with no values before the date and reject on and after it; a test covers both sides of the date."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-E accepted)"
+    supersedes: null
+    domain: status
+    risk: [state-transition]
+  - id: 41
+    summary: A small assessor input screen shows the move from free-text status to a validated dropdown
+    category: functional
+    source: "user:2026-11-07"
+    source_text: "we can create a small assessor side input screen to show the before (freetext) to the after (dropdown with validation)"
+    acceptance: "One form edits an assessment's status for signed-in admins of its company (existing sign-in, no new role); the baseline version offers a free-text field; the later version offers a dropdown of the five values that cannot be saved empty, with server-side validation from Req 29; both versions are visible in git history."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-C, T3-F accepted)"
+    supersedes: null
+    domain: status
+    risk: [state-transition, permissions]
+  - id: 42
+    summary: The column migration is described, not implemented, with dual-write and one owner for the column name
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "create a new column with the mapped status, fill that up and then rename the old staus to legacy_status and the new one to status"
+    acceptance: "SOLUTION.md describes the new-column approach as plan only; it states that rows written during the backfill are covered by writing both columns before the backfill starts and by a final catch-up pass before the switch; it states that raw SQL that names the status column (dashboard, export, status select) lives in one place so the switch changes it once; no migration or backfill execution is in the repo."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-C); dual-write point agreed by user 2026-11-07 (Prompt 19)"
+    supersedes: null
+    domain: status
+    risk: [state-transition]
+  - id: 43
+    summary: Lock and responsiveness safeguards for the large table are stated and agreed
+    category: operational
+    source: "user:2026-11-07"
+    source_text: "Keep the app responsive throughout. Avoid changes that would lock or stall the large assessments table."
+    acceptance: "SOLUTION.md names for each step its lock behaviour and mitigation: short lock_timeout with retry on the column add, the rename and the later drop; row-id batches with a throttle; pause thresholds of replication lag over 5 seconds, any lock wait over 2 seconds, or request latency over 1.5 times baseline; no long transactions; any index on the new column built CONCURRENTLY; verification counts run off the primary or on a partial index; statement_timeout on the backfill."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-J accepted)"
+    supersedes: null
+    domain: status
+    risk: [state-transition]
+  - id: 44
+    summary: New records without a status get a default
+    category: edge-case
+    source: "user:2026-11-07"
+    source_text: "the page obviosuly cant be saved without an input"
+    acceptance: "Creating an assessment with no status stores pending; creating one with a non-canonical status fails validation (Req 29); a test covers both."
+    status: active
+    blocked_on: null
+    decided_by: "user, 2026-11-07 (T3-I accepted)"
+    supersedes: null
+    domain: status
+    risk: [state-transition]
