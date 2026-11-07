@@ -1,23 +1,25 @@
 namespace :benchmark do
-  desc "Time the dashboard (SCENARIOS=normal,company2,big RUNS=5 BIG_LIMIT=600). Use BULLET=off MINI_PROFILER=off RAILS_LOG_LEVEL=warn."
+  desc "Time the dashboard (SCENARIOS=normal,company2,big,deep RUNS=5 BIG_LIMIT=600). Use BULLET=off MINI_PROFILER=off RAILS_LOG_LEVEL=warn."
   task dashboard: :environment do
     abort "The benchmark runs in development only" unless Rails.env.development?
 
     DashboardBenchmark.new(
-      keys: ENV.fetch("SCENARIOS", "normal,company2,big").split(","),
+      keys: ENV.fetch("SCENARIOS", "normal,company2,big,deep").split(","),
       runs: ENV.fetch("RUNS", 5).to_i,
       big_limit: ENV.fetch("BIG_LIMIT", 600).to_i,
       password: ENV.fetch("SEED_ADMIN_PASSWORD", AssessmentSeeder::DEFAULT_PASSWORD)
     ).call
   end
 
-  desc "EXPLAIN (ANALYZE, BUFFERS) for the dashboard's main query (SCENARIO=normal|company2|big)"
+  desc "EXPLAIN (ANALYZE, BUFFERS) for the dashboard's main query (SCENARIO=normal|company2|big|deep)"
   task explain: :environment do
     abort "Development only" unless Rails.env.development?
 
     scenario = ENV.fetch("SCENARIO", "big")
-    company = Company.find_by!(name: scenario == "big" ? "Company 01" : "Company 02")
-    relation = company.assessments.order(assessment_date: :desc, id: :desc)
+    company = Company.find_by!(name: %w[ big deep ].include?(scenario) ? "Company 01" : "Company 02")
+    page_size = DashboardController::PAGE_SIZE
+    offset = scenario == "deep" ? 2_999 * page_size : 0
+    relation = company.assessments.order(assessment_date: :desc, id: :desc).offset(offset).limit(page_size + 1)
     relation = relation.matching(date_from: Date.new(2024, 1, 1), date_to: Date.new(2024, 12, 31), status: nil) if scenario == "normal"
     connection = ActiveRecord::Base.connection
     puts "-- main query (#{scenario})"

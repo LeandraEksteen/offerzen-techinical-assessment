@@ -1,0 +1,55 @@
+schema_version: 1
+key: TKT-5
+title: "Task 2: dashboard pagination"
+jira: assessment-log/tickets/TKT-5.md
+epic_base_branches: {}
+prs:
+  - id: 1
+    title: "TKT-5 | Task 2: dashboard pagination"
+    repo: LeandraEksteen/offerzen-techinical-assessment
+    local_path: /Users/leandraeksteen/Documents/my-files/offerzen-techinical-assessment
+    base: main
+    branch: feat/TKT-5/dashboard-pagination
+    stack: rails
+    implements: []
+    role: none
+    requirements: [23, 26, 27]
+    scope:
+      - app/controllers/dashboard_controller.rb
+      - app/views/dashboard/
+      - app/helpers/
+      - lib/dashboard_benchmark.rb
+      - test/
+      - assessment-log/
+    changes: |
+      Page the dashboard 50 rows at a time with Previous and Next only: fetch 51 rows and show 50, the
+      extra one only tells whether a next page exists, so there is no total count. Bad page values show
+      page 1; a page past the end shows an empty page with a way back. Filters are kept in the links.
+      Order stays assessment date descending then id descending. Add page-1 and deep-page scenarios to
+      the benchmark and record before and after numbers; prove page 1 is unchanged with the snapshots.
+    stubs: none
+    tests:
+      - "UT-1 [positive] 50 rows per page: 120 rows give pages of 50, 50 and 20"
+      - "UT-2 [edge] exactly 50 rows has no Next link; 51 rows has one (the extra row is not shown)"
+      - "UT-3 [positive] Previous appears only from page 2, Next only when more rows exist, and no total count is shown"
+      - "UT-4 [negative] page values abc, -1, 0, empty, 1.5 and a huge number show page 1 with status 200"
+      - "UT-5 [edge] a page past the last returns 200 with an empty table message and a way back"
+      - "UT-6 [edge] with every row on the same date the pages together hold each row exactly once, in id-descending order"
+      - "UT-7 [positive] Previous and Next keep the date and status filters and copy no other parameter"
+      - "UT-8 [positive] page 1 shows exactly the first 50 rows of the full ordered list"
+      - "UT-9 [positive] the number of SQL queries for a page is bounded by the page size, not the number of rows"
+      - "UT-10 [negative] invalid filters still return 422 with no table and no paging links"
+      - "UT-11 [positive] the benchmark has page-1 scenarios and a deep-page scenario and reports 50 rows for each"
+    test_command: bin/rails db:test:prepare test
+    lint_command: bin/rubocop && bin/brakeman --no-pager && bin/bundler-audit
+    depends_on: []
+    depends_reason: ""
+merge_order: [1]
+deploy_notes: Not deployed anywhere in this exercise; merging to main only. The change is revertible on its own.
+manual_checks:
+  - "MC-1 [manual] local: run the benchmark after the change and append the row to the benchmarks table"
+  - "MC-2 [manual] local: run the snapshot task for both views and diff against the committed baseline snapshots: no differences"
+  - "MC-3 [manual] local: time a deep page (Company 01) and record EXPLAIN for it, to show what offset costs without an index"
+  - "MC-4 [manual] local: in the browser use Next, Previous, a page past the end and bad page values on the largest company"
+  - "MC-5 [manual] local: repeat the ab load test on the normal-user page and record the change"
+conflict_risks: []

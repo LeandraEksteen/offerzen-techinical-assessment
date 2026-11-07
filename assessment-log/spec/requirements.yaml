@@ -276,7 +276,7 @@ requirements:
     category: functional
     source: "user:2026-11-07"
     source_text: "Then assuming we don't already have pagination that's the first thing to add that could add instant value"
-    acceptance: "The dashboard shows 50 rows per page with Previous and Next only (next detected by fetching one extra row); page values like abc, -1 or past the last page show page 1 or an empty last page with status 200; order is assessment_date descending then id descending; filters survive in page links; measured time and query count before and after are recorded."
+    acceptance: "The dashboard shows 50 rows per page with Previous and Next only (next detected by fetching one extra row); a page value that is not a whole number from 1 to 1,000,000 (abc, -1, 0, empty, 1.5, a huge number) shows page 1, and a page past the last shows an empty page with a message and a way back, both with status 200; order is assessment_date descending then id descending; filters survive in page links; measured time and query count before and after are recorded."
     status: active
     blocked_on: null
     decided_by: "user, 2026-11-07; Q-I agreed"

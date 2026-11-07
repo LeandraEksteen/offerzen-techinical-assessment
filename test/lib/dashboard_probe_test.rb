@@ -65,7 +65,20 @@ class DashboardProbeTest < ActiveSupport::TestCase
     DashboardBenchmark.new(keys: [ "normal" ], runs: 2, password: TEST_PASSWORD, output: io, enforce_development: false).call
 
     row = io.string.lines.last
-    assert_match(/\A\| Company 02, assessment dates in 2024 \| 3 \| \d+ \| \d+ \| \d+ \(\d+-\d+\) \| \d+ KB \| HTTP 200 \|\z/, row.strip)
+    assert_match(/\A\| Company 02, assessment dates in 2024, page 1 \| 3 \| \d+ \| \d+ \| \d+ \(\d+-\d+\) \| \d+ KB \| HTTP 200 \|\z/, row.strip)
     assert_no_match(/@/, io.string)
+  end
+
+  # UT-11 (TKT-5)
+  test "the benchmark has page-1 scenarios and a deep page, and a page holds 50 rows" do
+    keys = DashboardBenchmark.scenarios.map(&:key)
+    assert_equal %w[ normal company2 big deep ], keys
+    assert_match(/page=3000/, DashboardBenchmark.scenarios.find { |scenario| scenario.key == "deep" }.path)
+
+    add_rows(120)
+    result = probe.measure("/dashboard")
+
+    assert_equal 50, result.rows
+    assert_equal 3, probe.snapshot("/dashboard?page=3").size > 0 ? 3 : 0
   end
 end

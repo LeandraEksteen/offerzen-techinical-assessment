@@ -7,4 +7,10 @@ module DashboardHelper
     json = assessment.responses_json
     json["score"] if json.is_a?(Hash)
   end
+
+  # Link to another page, keeping only the date and status filters. No other
+  # request parameter is copied into a link.
+  def dashboard_page_path(page)
+    dashboard_path(request.query_parameters.slice("from", "to", "status").merge("page" => page))
+  end
 end

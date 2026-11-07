@@ -161,4 +161,161 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_log_clean log, "private.person@example.test", "employee1@example.test", "admin.a@example.test", "private-comment-text", "61.8437"
     assert_includes log, "Processing by DashboardController#show"
   end
+
+  # --- pagination (TKT-5) ---
+
+  def add_assessments(count, **attributes)
+    Array.new(count) { add_assessment(**attributes) }
+  end
+
+  def page_links
+    css_select("nav[aria-label=Pages] a").map { |link| link.text }
+  end
+
+  # UT-1
+  test "pages hold 50 rows: 120 rows give 50, 50 and 20" do
+    add_assessments(120)
+    sign_in_as @admin
+
+    sizes = [ 1, 2, 3 ].map do |page|
+      get dashboard_url, params: { page: page }
+      table_rows.size
+    end
+
+    assert_equal [ 50, 50, 20 ], sizes
+  end
+
+  # UT-2
+  test "exactly 50 rows has no Next link and 51 rows has one but shows 50" do
+    add_assessments(50)
+    sign_in_as @admin
+    get dashboard_url
+    assert_equal 50, table_rows.size
+    assert_not_includes page_links, "Next"
+
+    add_assessment
+    get dashboard_url
+    assert_equal 50, table_rows.size
+    assert_includes page_links, "Next"
+  end
+
+  # UT-3
+  test "Previous shows only from page 2, Next only when more rows exist, and no total count" do
+    add_assessments(120)
+    sign_in_as @admin
+
+    get dashboard_url
+    assert_equal [ "Next" ], page_links
+    get dashboard_url, params: { page: 2 }
+    assert_equal [ "Previous", "Next" ], page_links
+    get dashboard_url, params: { page: 3 }
+    assert_equal [ "Previous", "First page" ], page_links
+    assert_no_match(/\bof \d+\b|total/i, response.body)
+    assert_match(/Rows 101 to 120/, response.body)
+  end
+
+  # UT-4
+  test "bad page values show page 1 with status 200" do
+    first = add_assessments(60).last
+    sign_in_as @admin
+
+    [ "abc", "-1", "0", "", "1.5", "1e3", " 2", "2 ", "1000001", "100000000000000000000" ].each do |value|
+      get dashboard_url, params: { page: value }
+      assert_response :success, "page=#{value.inspect}"
+      assert_equal 50, table_rows.size, "page=#{value.inspect}"
+      assert_equal first.employee_id.to_s, table_rows.first[1], "page=#{value.inspect} should be page 1"
+    end
+    get "/dashboard?page[]=2"
+    assert_response :success
+    assert_equal first.employee_id.to_s, table_rows.first[1]
+  end
+
+  # UT-5
+  test "a page past the last shows an empty page with a way back" do
+    add_assessments(60)
+    sign_in_as @admin
+
+    get dashboard_url, params: { page: 9 }
+
+    assert_response :success
+    assert_equal 0, table_rows.size
+    assert_match(/No assessments on this page/, response.body)
+    assert_equal [ "Previous", "First page" ], page_links
+  end
+
+  test "a company with no rows shows a plain message" do
+    sign_in_as @admin
+
+    get dashboard_url
+
+    assert_response :success
+    assert_match(/No assessments\./, response.body)
+    assert_equal [], page_links
+  end
+
+  # UT-6
+  test "with every row on one date the pages together hold each row exactly once, newest id first" do
+    ids = add_assessments(120, assessment_date: "2025-06-01").map(&:employee_id)
+    sign_in_as @admin
+
+    seen = [ 1, 2, 3 ].flat_map do |page|
+      get dashboard_url, params: { page: page }
+      table_rows.map { |row| row[1].to_i }
+    end
+
+    assert_equal ids.sort.reverse, seen
+    assert_equal seen.uniq, seen
+  end
+
+  # UT-7
+  test "page links keep the filters and copy no other parameter" do
+    add_assessments(120, status: "pending", assessment_date: "2025-03-01")
+    sign_in_as @admin
+
+    get dashboard_url, params: { from: "2025-01-01", to: "2025-12-31", status: "pending", page: 2, company_id: @other_company.id, secret: "x" }
+
+    hrefs = css_select("nav[aria-label=Pages] a").map { |link| link["href"] }
+    assert_equal 2, hrefs.size
+    hrefs.each do |href|
+      query = Rack::Utils.parse_query(URI.parse(href).query)
+      assert_equal [ "from", "page", "status", "to" ], query.keys.sort
+      assert_equal "pending", query["status"]
+    end
+    assert_equal [ "1", "3" ], hrefs.map { |href| Rack::Utils.parse_query(URI.parse(href).query)["page"] }.sort
+  end
+
+  # UT-8
+  test "page 1 shows exactly the first 50 rows of the full ordered list" do
+    add_assessments(75).each_with_index { |a, i| a.update_columns(assessment_date: Date.new(2025, 1, 1) + (i % 5)) }
+    sign_in_as @admin
+
+    get dashboard_url
+
+    expected = @company.assessments.order(assessment_date: :desc, id: :desc).limit(50).map { |a| a.employee_id.to_s }
+    assert_equal expected, table_rows.map { |row| row[1] }
+  end
+
+  # UT-9
+  test "the SQL query count for a page is bounded by the page size, not the number of rows" do
+    add_assessments(120)
+    sign_in_as @admin
+
+    queries = count_queries { get dashboard_url }
+
+    # 50 employee lookups (the N+1 TKT-6 removes) plus a handful of fixed queries.
+    assert_operator queries, :<=, 50 + 12, "page 1 ran #{queries} queries"
+    assert_operator queries, :>=, 50
+  end
+
+  # UT-10
+  test "invalid filters still return 422 with no table and no paging links" do
+    add_assessments(60)
+    sign_in_as @admin
+
+    get dashboard_url, params: { from: "2025-02-01", to: "2025-01-01", page: 2 }
+
+    assert_response :unprocessable_entity
+    assert_select "table", 0
+    assert_equal [], page_links
+  end
 end

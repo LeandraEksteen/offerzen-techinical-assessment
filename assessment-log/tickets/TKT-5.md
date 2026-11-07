@@ -2,9 +2,9 @@
 key: TKT-5
 type: Task
 title: Task 2: dashboard pagination
-status: To Do
+status: In Review
 parent: EPIC-1
-updated: 2026-11-07T08:28:15Z
+updated: 2026-11-07T10:02:22Z
 ---
 
 ## Description
@@ -33,3 +33,4 @@ updated: 2026-11-07T08:28:15Z
 - No commit, push or PR without the author's explicit permission.
 
 ## Comments
+- 2026-11-07 implementation: `DashboardController` fetches 51 rows at the page offset and shows 50 (the extra row only signals a next page, so there is no total count); a page value that is not a whole number from 1 to 1,000,000 shows page 1; a page past the last shows an empty page with a message, Previous and a First page link (status 200); Previous and Next carry only the date and status filters; order unchanged. No gem. The benchmark gained a deep-page scenario and page-1 labels. Spec wording amended (Req 23: page-value limits and past-the-end behaviour). Checks: 115 tests (stable over 3 runs), rubocop, brakeman, bundler-audit clean. Results on the 500k seed (median of 5, profilers off): normal user 421 ms to 66 ms and 1,414 to 53 queries; Company 02 all rows 3,921 ms to 60 ms and 14,787 to 52 queries; Company 01 58,019 ms to 61 ms, 199,064 to 53 queries, 37,287 KB to 12 KB; deep page (3,000) 183 ms. `ab`, concurrency 1: 2.44 to 15.40 requests/s; concurrency 3: 2.98 to 29.26 requests/s. Page-1 snapshots (both views) are identical to the baseline. Browser check on the largest company: page 4000 is the last (200,000 rows), 4001 and 999999 are empty pages, abc, -1, 0, 1.5 and a 21-digit number show page 1, status filters and invalid filters behave.
